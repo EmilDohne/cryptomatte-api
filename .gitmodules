@@ -1,0 +1,12 @@
+[submodule "thirdparty/benchmark"]
+	path = thirdparty/benchmark
+	url = https://github.com/google/benchmark
+[submodule "thirdparty/doctest"]
+	path = thirdparty/doctest
+	url = https://github.com/doctest/doctest
+[submodule "thirdparty/compressed-image"]
+	path = thirdparty/compressed-image
+	url = https://github.com/EmilDohne/compressed-image
+[submodule "thirdparty/vcpkg"]
+	path = thirdparty/vcpkg
+	url = https://github.com/microsoft/vcpkg
