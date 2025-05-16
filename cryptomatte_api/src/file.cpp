@@ -19,14 +19,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		m_Key = key;
 		m_Manifest = std::move(_manifest);
 
-		
+		// TODO: validation
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::vector<file> file::load(std::filesystem::path file)
+	std::vector<file> file::load(std::filesystem::path file, bool load_preview)
 	{
-
+		compressed::image<float32_t> image;
 	}
 
 } // NAMESPACE_CRYPTOMATTE_API
