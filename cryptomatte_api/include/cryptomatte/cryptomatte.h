@@ -5,10 +5,12 @@
 
 #include "detail/macros.h"
 
+#include "metadata.h"
 #include "manifest.h"
 
 #include <compressed/channel.h>
 #include <OpenImageIO/imageio.h>
+#include <json.hpp>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {
@@ -63,26 +65,36 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	/// masks as they are being extracted. This is primarily to greatly reduce memory usage as masks typically compress
 	/// quite well, but also for performance reasons (less allocations -> greater speed). For specifics please check out
 	/// the benchmarking section in the documentation.
-	struct file
+	struct cryptomatte
 	{
 
+		cryptomatte() = default;
+		cryptomatte(cryptomatte&&) = default;
+		cryptomatte& operator=(cryptomatte&&) = default;
 		// delete copy ctor and copy assignment operator as compressed::channel is not copyable.
-		file(const file&) = delete;
-		file& operator=(const file&) = delete;
+		cryptomatte(const cryptomatte&) = delete;
+		cryptomatte& operator=(const cryptomatte&) = delete;
 
-		file(
-			std::unordered_map<std::string, compressed::channel<float32_t>> channels,
-			std::string name,
-			std::string key,
-			std::optional<manifest> _manifest = std::nullopt
+		cryptomatte(
+			std::unordered_map<std::string, compressed::channel<float32_t>> channels, 
+			const NAMESPACE_CRYPTOMATTE_API::metadata metadata
 		);
 
-		file(
-			std::unordered_map<std::string, std::vector<float32_t>> channels,
-			std::string name,
-			std::string key,
-			std::optional<manifest> _manifest = std::nullopt
+		cryptomatte(
+			std::unordered_map<std::string, std::vector<float32_t>> channels, 
+			const json_ordered& metadata
 		);
+
+		/// \brief Load a file containing cryptomattes into multiple cryptomattes.
+		/// 
+		/// \param file The file path to load the image from. This must be an exr file.
+		/// \param load_preview Whether to load the legacy preview channels:
+		///                     {typename}.r, {typename}.g, {typename}.b
+		///						which may store a preview channel (but don't have to). If this is set to false
+		///						we will never load these channels speeding up loading.
+		/// 
+		/// \returns The detected and loaded cryptomattes, there may be multiple or none per-file.
+		static std::vector<file> load(std::filesystem::path file, bool load_preview);
 
 		/// \brief Checks whether this cryptomatte contains the preview (legacy) channels
 		/// 
@@ -107,7 +119,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \return The legacy/preview channels (if present)
 		std::vector<std::vector<float32_t>> preview() const;
 
-		/// \brief Returns a vector of the preview (legacy) channels
+		/// \brief Extracts the legacy/preview channels from the `cryptomatte` instance. 
 		/// 
 		/// These may not always be available or loaded so the function can return either 0 or 3 channels. These channels
 		/// are the {typename}.r, {typename}.g, {typename}.b channels and may store a filtered preview image of all the 
@@ -115,10 +127,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// functions for this instead.
 		/// 
 		/// This overloads returns the channels in their compressed format which is ideal if you wish to operate on the 
-		/// compressed channels directly rather than paying the memory cost of decompressing them.
+		/// compressed channels directly rather than paying the memory cost of decompressing them. After these have been
+		/// extracted they are entirely in your control and extracting them again is not possible.
 		/// 
 		/// \return The legacy/preview channels (if present)
-		const std::vector<compressed::channel<float32_t>>& preview_compressed() const;
+		std::unordered_map<std::string, compressed::channel<float32_t>> extract_compressed();
 
 		/// \brief Extract the mask with the given name from the cryptomatte, computing the pixels as we go.
 		/// 
@@ -260,60 +273,13 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		///			 form.
 		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed() const;
 
-		/// \brief Load a file containing cryptomattes into multiple cryptomattes.
-		/// 
-		/// \param file The file path to load the image from. This must be an exr file.
-		/// \param load_preview Whether to load the legacy preview channels:
-		///                     {typename}.r, {typename}.g, {typename}.b
-		///						which may store a preview channel (but don't have to). If this is set to false
-		///						we will never load these channels speeding up loading.
-		/// 
-		/// \returns The detected and loaded cryptomattes, there may be multiple or none per-file.
-		static std::vector<file> load(std::filesystem::path file, bool load_preview);
-
-		/// Get the name associated with the cryptomatte, for example 'CryptoAsset'. This will be the prefix of the 
-		/// channel names associated with this cryptomatte.
-		std::string name() const noexcept
-		{
-			return m_Name;
-		}
-
-		/// Get the 7-character key used to uniquely identify the metadata for a given cryptomatte within a multi-layered
-		/// file. 
-		std::string key() const noexcept
-		{
-			return m_Key;
-		}
-
-		/// Get the hashing algorithm used for encoding uint32_t values. This will always be 'MurmurHash3_32'
-		constexpr std::string_view hashing_algorithm() const noexcept
-		{
-			return m_Hash;
-		}
-
-		/// Get the conversion type used to convert the hashes into pixel values. This will always be 'uint32_to_float32'
-		constexpr std::string_view conversion_type() const noexcept
-		{
-			return m_Conversion;
-		}
-
 		/// Retrieve the number of levels (rank-coverage pairs) the cryptomatte was encoded with.
-		size_t num_levels() const noexcept
-		{
-			return m_Channels.size() / 2;
-		}
+		size_t num_levels() const noexcept;
 
-		/// Get the manifest associated with the cryptomatte storing a mapping of human-readable names to hashes.
-		///
-		/// This is not required to exist on a cryptomatte and thus may not exist.
-		/// 
-		/// Implementation detail: This can either be embedded into the metadata or stored as a sidecar json file,
-		/// the former is the one produced by most DCCs by default.
-		std::optional<manifest> manifest() const noexcept
-		{
-			return m_Manifest;
-		}
-
+		/// Get the metadata associated with the cryptomatte file, this includes things such as the channel names,
+		/// the unique key identifier and the cryptomatte manifest (a mapping of human-readable names to their hashes).
+		NAMESPACE_CRYPTOMATTE_API::metadata metadata();
+		
 	private:
 		/// The channels related to this cryptomatte mapped by their full names.
 		/// this may look as follows:
@@ -339,24 +305,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// }
 		std::unordered_map<std::string, compressed::channel<float32_t>> m_LegacyChannels;
 
-		/// The name of the cryptomatte type, for example, 'CryptoAsset'. This will be propagate to the channel names
-		/// such that e.g. CryptoAsset01.r will be associated with the name.
-		std::string m_Name;
-		/// 7-char key that uniquely identifies the metadata associated with this cryptomatte. A single multi-part file
-		/// can hold any number of cryptomattes and thus can hold multiple 'cryptomatte/<hash>/name' items. This 
-		/// disambiguates them.
-		std::string m_Key;
-		/// As of the 1.2.0 cryptomatte spec these are constants with no alternatives available.
-		/// Describes the hashing algorithm when encoding, for decoding this has no bearing. 
-		constexpr static std::string_view m_Hash = "MurmurHash3_32"sv;
-		/// As of the 1.2.0 cryptomatte spec these are constants with no alternatives available.
-		/// Describes the mapping of hashes to pixel values, in this case mapping from a uint32_t
-		/// hash to a float32_t pixel value.
-		constexpr static std::string_view m_Conversion = "uint32_to_float32"sv;
-		/// Cryptomatte manifest containing a mapping of human readable names to their uint32_t hashes. This manifest
-		/// is not strictly required and therefore may not exist. It is implemented either as a json sidecar file or as
-		/// an embedded json.
-		std::optional<cryptomatte::manifest> m_Manifest;
+		/// The cryptomattes' metadata, this contains information on 
+		metadata m_Metadata;
 	};
 
 } // NAMESPACE_CRYPTOMATTE_API
