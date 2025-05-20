@@ -92,11 +92,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		/// Retrieve all the cryptomatte channel names for the given list of channelnames in the order they came in.
 		/// Filters all of them according to `is_valid` and returns all the channel names matching this.
-		std::vector<std::string> channel_names(const std::vector<std::string>& channelnames);
+		std::vector<std::string> channel_names(const std::vector<std::string>& channelnames) const;
 
 		/// Retrieve all the legacy cryptomatte channel names for the given list of channelnames in the order they came in.
 		/// Filters all of them according to `is_valid_legacy` and returns all the channel names matching this.
-		std::vector<std::string> legacy_channel_names(const std::vector<std::string>& channelnames);
+		std::vector<std::string> legacy_channel_names(const std::vector<std::string>& channelnames) const;
 
 		/// Check whether the passed channel name is a channel name of this metadata (excluding legacy channels).
 		/// Channel names must follow the following convention
@@ -140,11 +140,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		std::string key() const;
 
 		/// Retrieve the hashing method used for encoding, always 'MurmurHash3_32'
-		constexpr std::string_view hash_method() const;
+		std::string_view hash_method() const;
 
 		/// Retrieve the conversion method used for converting the rank-channel pixels into hashes. 
 		/// Always 'uint32_to_float32'.
-		constexpr std::string_view conversion_method() const;
+		std::string_view conversion_method() const;
 
 		/// Retrieve the manifest (if present) from the metadata, this may be empty and should not be relied
 		/// upon for decoding the cryptomatte masks.
@@ -154,11 +154,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// Cryptomattes store their metadata in the following format cryptomatte/<key>/<attribute>.
 		/// These functions give you all the valid names for these attributes. These are 'name',
 		/// 'hash', 'conversion', 'manifest' and 'manif_file'.
-		constexpr static std::string attrib_name_identifier() const;
-		constexpr static std::string attrib_hash_method_identifier() const;
-		constexpr static std::string attrib_conversion_method_identifier() const;
-		constexpr static std::string attrib_manifest_identifier() const;
-		constexpr static std::string attrib_manif_file_identifier() const;
+		static std::string attrib_name_identifier();
+		static std::string attrib_hash_method_identifier();
+		static std::string attrib_conversion_method_identifier();
+		static std::string attrib_manifest_identifier();
+		static std::string attrib_manif_file_identifier();
 
 	private:
 		/// The name of the cryptomatte type, for example, 'CryptoAsset'. This will be propagate to the channel names
@@ -170,11 +170,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		std::string m_Key;
 		/// As of the 1.2.0 cryptomatte spec these are constants with no alternatives available.
 		/// Describes the hashing algorithm when encoding, for decoding this has no bearing. 
-		constexpr static std::string_view m_Hash = "MurmurHash3_32"sv;
+		static inline const std::string m_Hash = "MurmurHash3_32";
 		/// As of the 1.2.0 cryptomatte spec these are constants with no alternatives available.
 		/// Describes the mapping of hashes to pixel values, in this case mapping from a uint32_t
 		/// hash to a float32_t pixel value.
-		constexpr static std::string_view m_Conversion = "uint32_to_float32"sv;
+		static inline const std::string m_Conversion = "uint32_to_float32";
 		/// Cryptomatte manifest containing a mapping of human readable names to their uint32_t hashes. This manifest
 		/// is not strictly required and therefore may not exist. It is implemented either as a json sidecar file or as
 		/// an embedded json.
@@ -182,8 +182,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		/// A list of all of the valid attribute names that cryptomatte metadata may contain. Used internally
 		/// during parsing to validate.
-		constexpr static std::array<std::string, 5> s_ValidAttribs = { 
-			"name", "hash", "conversion", "manifest", "manif_file" 
+		static inline const std::array<std::string, 5> s_ValidAttribs = {
+			"name", "hash", "conversion", "manifest", "manif_file"
 		};
 		
 	};

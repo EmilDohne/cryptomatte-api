@@ -77,12 +77,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		cryptomatte(
 			std::unordered_map<std::string, compressed::channel<float32_t>> channels, 
-			const NAMESPACE_CRYPTOMATTE_API::metadata metadata
+			const NAMESPACE_CRYPTOMATTE_API::metadata& metadata
 		);
 
 		cryptomatte(
 			std::unordered_map<std::string, std::vector<float32_t>> channels, 
-			const json_ordered& metadata
+			size_t width,
+			size_t height,
+			const NAMESPACE_CRYPTOMATTE_API::metadata& metadata
 		);
 
 		/// \brief Load a file containing cryptomattes into multiple cryptomattes.
@@ -94,7 +96,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		///						we will never load these channels speeding up loading.
 		/// 
 		/// \returns The detected and loaded cryptomattes, there may be multiple or none per-file.
-		static std::vector<file> load(std::filesystem::path file, bool load_preview);
+		static std::vector<cryptomatte> load(std::filesystem::path file, bool load_preview);
 
 		/// \brief Checks whether this cryptomatte contains the preview (legacy) channels
 		/// 
@@ -291,7 +293,10 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		///		CryptoAsset01.r : <channel>,
 		///		...
 		/// }
-		std::unordered_map<std::string, compressed::channel<float32_t>> m_Channels;
+		/// 
+		/// These are sorted and validated on construction, so it is safe to assume that we have multiple 
+		/// rank-coverage pairs in the correct order.
+		std::vector<std::pair<std::string, compressed::channel<float32_t>>> m_Channels;
 
 		/// The legacy channels related to this cryptomatte, these sometimes contain a filtered preview image but
 		/// have no effect on decoding.
@@ -306,7 +311,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		std::unordered_map<std::string, compressed::channel<float32_t>> m_LegacyChannels;
 
 		/// The cryptomattes' metadata, this contains information on 
-		metadata m_Metadata;
+		NAMESPACE_CRYPTOMATTE_API::metadata m_Metadata;
 	};
 
 } // NAMESPACE_CRYPTOMATTE_API

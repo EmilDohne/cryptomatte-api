@@ -7,6 +7,7 @@
 namespace NAMESPACE_CRYPTOMATTE_API
 {
 
+
 	using json_ordered = nlohmann::ordered_json;
 
 

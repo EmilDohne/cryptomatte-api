@@ -1,6 +1,11 @@
 #include "metadata.h"
 
+#include "manifest.h"
 #include "detail/detail.h"
+#include "detail/string_util.h"
+
+#include <compressed/detail/oiio_util.h>
+#include <OpenImageIO/imageio.h>
 
 #include <regex>
 
@@ -70,7 +75,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		// Start by iterating all the metadata and loading the cryptomatte related keys,
 		// performs validation on the metadata values' type and format.
-		for (const auto& [key, value] : json)
+		for (const auto& [key, value] : json.items())
 		{
 			if (!key.starts_with("cryptomatte/"))
 			{
@@ -169,15 +174,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					);
 				}
 				// Only 'uint32_to_float32' is supported by the specification at this time (v1.2.0)
-				if (value.template get<std::string> != "uint32_to_float32")
+				if (value.template get<std::string>() != "uint32_to_float32")
 				{
 					throw std::runtime_error(
-						fmt::format(
+						std::format(
 							"Unable to validate metadata, invalid cryptomatte conversion method in metadata."
 							" Expected to be 'uint32_to_float32' but instead received '{}' while reading metadata"
 							" for cryptomatte with key '{}'",
-							value.template get<std::string>,
-							split[1]
+							value.template get<std::string>(),
+							crypto_key
 						)
 					);
 				}
@@ -207,11 +212,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				/// parsing from json or string.
 				if (value.is_string())
 				{
-					ref.m_Manifest = manifest::from_str(value.template get<std::string>())
+					ref.m_Manifest = NAMESPACE_CRYPTOMATTE_API::manifest::from_str(value.template get<std::string>());
 				}
 				else
 				{
-					ref.m_Manifest = manifest(value);
+					ref.m_Manifest = NAMESPACE_CRYPTOMATTE_API::manifest(value);
 				}
 			}
 		}
@@ -242,7 +247,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::vector<std::string> metadata::channel_names(const std::vector<std::string>& channelnames)
+	std::vector<std::string> metadata::channel_names(const std::vector<std::string>& channelnames) const
 	{
 		std::vector<std::string> out;
 
@@ -259,7 +264,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::vector<std::string> metadata::legacy_channel_names(const std::vector<std::string>& channelnames)
+	std::vector<std::string> metadata::legacy_channel_names(const std::vector<std::string>& channelnames) const
 	{
 		std::vector<std::string> out;
 
@@ -290,7 +295,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		}
 
 		// Match any sequence starting with two digits
-		const std::regex re = "^\d\d";
+		std::regex re("^\\d\\d");
 		std::smatch re_result;
 		if (!std::regex_search(res, re_result, re))
 		{
@@ -354,14 +359,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string_view metadata::hash_method() const
+	std::string_view metadata::hash_method() const
 	{
 		return m_Hash;
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string_view metadata::conversion_method() const
+	std::string_view metadata::conversion_method() const
 	{
 		return m_Conversion;
 	}
@@ -375,35 +380,35 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string metadata::attrib_name_identifier() const
+	std::string metadata::attrib_name_identifier()
 	{
 		return metadata::s_ValidAttribs[0];
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string metadata::attrib_hash_method_identifier() const
+	std::string metadata::attrib_hash_method_identifier()
 	{
 		return metadata::s_ValidAttribs[1];
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string metadata::attrib_conversion_method_identifier() const
+	std::string metadata::attrib_conversion_method_identifier()
 	{
 		return metadata::s_ValidAttribs[2];
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string metadata::attrib_manifest_identifier() const
+	std::string metadata::attrib_manifest_identifier()
 	{
 		return metadata::s_ValidAttribs[3];
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	constexpr std::string metadata::attrib_manif_file_identifier() const
+	std::string metadata::attrib_manif_file_identifier()
 	{
 		return metadata::s_ValidAttribs[4];
 	}

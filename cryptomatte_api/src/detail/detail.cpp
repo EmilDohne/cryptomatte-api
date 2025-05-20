@@ -1,6 +1,7 @@
 #include "detail/detail.h"
 
 #include <format>
+#include <string>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {
@@ -23,7 +24,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			}
 
 			// decode using base-16
-			auto res = std::stoull(hex, nullptr, 16);
+			auto res = std::stoull(std::string(hex), nullptr, 16);
 			if (res > std::numeric_limits<uint32_t>::max())
 			{
 				throw std::runtime_error(

@@ -4,6 +4,8 @@
 
 #include <string_view>
 #include <string>
+#include <vector>
+#include <span>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {
@@ -41,6 +43,27 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			return res;
 		}
 
+
+		inline std::string join(std::span<std::string> in, std::string delimiter)
+		{
+			if (in.empty())
+			{
+				return "";
+			}
+
+			std::string result;
+
+			result += in[0];
+			for (auto idx : std::views::iota<size_t>(1, in.size()))
+			{
+				result += delimiter;
+				result += in[idx];
+			}
+
+			return result;
+		}
+
+
 		/// Strips the string `strip` from the string `s` repeatedly until `s` no longer
 		/// starts with this value. This is upper-bounded by the template parameter `max_strips` to avoid 
 		/// infinite loops. This defaults to 16384 strip iterations.
@@ -68,6 +91,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			return s.substr(start_pos);
 		}
 		
+
+		/// Transforms the string s into its casefold representation, returning a copy of it.
+		inline std::string casefold(const std::string& s)
+		{
+			auto result = s;
+			std::transform(result.begin(), result.end(), result.begin(), std::tolower);
+			return result;
+		}
+
 
 	} // str
 
