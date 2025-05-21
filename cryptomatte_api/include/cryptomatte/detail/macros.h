@@ -1,6 +1,7 @@
 #pragma once
 
 #include <climits>
+#include <limits>
 
 #define NAMESPACE_CRYPTOMATTE_API cmatte
 

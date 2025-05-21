@@ -61,7 +61,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 			/// \brief Get the original channel name this instance was instantiated with.
 			/// \return The original channel string passed to the constructor.
-			std::string channel_name();
+			std::string channel_name() const;
 
 			/// \brief Compare two channel_repr instances for sorting.
 			///

@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <span>
+#include <ranges>
+#include <algorithm>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {
@@ -54,7 +56,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			std::string result;
 
 			result += in[0];
-			for (auto idx : std::views::iota<size_t>(1, in.size()))
+			for (auto idx : std::views::iota(size_t{ 1 }, in.size()))
 			{
 				result += delimiter;
 				result += in[idx];
@@ -95,8 +97,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// Transforms the string s into its casefold representation, returning a copy of it.
 		inline std::string casefold(const std::string& s)
 		{
-			auto result = s;
-			std::transform(result.begin(), result.end(), result.begin(), std::tolower);
+			std::string result = s;
+			std::transform(s.begin(), s.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
 			return result;
 		}
 

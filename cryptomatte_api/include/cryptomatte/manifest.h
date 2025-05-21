@@ -108,11 +108,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					}
 					else if constexpr (std::is_same_v<T, float32_t>)
 					{
-						return std::bit_cast<float32_t>(val);
+						return std::bit_cast<float32_t>(value);
 					}
 					else
 					{
-						return std::format("{:08x}", val);
+						return std::format("{:08x}", value);
 					}
 				}
 			}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <string_view>
@@ -17,7 +17,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	// string_view literals for ""sv
 	using namespace std::string_view_literals;
 
-	/// @brief A cryptomatte file loaded from disk or memory storing the channels as compressed buffer
+	/// \brief A cryptomatte file loaded from disk or memory storing the channels as compressed buffer
 	/// 
 	/// This is the main entry point for loading and interacting with cryptomatte files and their associated data.
 	/// It fully supports loading any number of cryptomattes from a given file and performs validation on the metadata,
@@ -75,11 +75,43 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		cryptomatte(const cryptomatte&) = delete;
 		cryptomatte& operator=(const cryptomatte&) = delete;
 
+
+		/// \brief Construct a cryptomatte from a set of input channels and associated metadata.
+		/// 
+		/// This constructor initializes a cryptomatte instance by validating and organizing a set of 
+		/// compressed float32 channels. It filters and categorizes the provided channels into recognized 
+		/// cryptomatte channels and legacy channels based on the supplied metadata. All cryptomatte 
+		/// channels are required to have consistent encoding parameters (number of chunks, chunk size, 
+		/// resolution) for successful construction.
+		///
+		/// \param channels A map of channel names to compressed float32 channel data. This must not be empty. 
+		///                 Channels must conform to the encoding consistency required by cryptomatte.
+		/// \param metadata Metadata used to validate and classify the provided channels into cryptomatte 
+		///                 or legacy categories.
+		///
+		/// \throws std::invalid_argument if the channel map is empty or if any cryptomatte channel has inconsistent 
+		///         encoding parameters compared to the others.
+		///
 		cryptomatte(
 			std::unordered_map<std::string, compressed::channel<float32_t>> channels, 
 			const NAMESPACE_CRYPTOMATTE_API::metadata& metadata
 		);
 
+		/// \brief Construct a cryptomatte from raw float32 image channel data and metadata.
+		/// 
+		/// This constructor initializes a cryptomatte instance by converting raw float32 vectors into 
+		/// compressed channels, using the specified image dimensions. Channels are classified as cryptomatte 
+		/// or legacy based on the provided metadata. All cryptomatte channels must have the same vector size, 
+		/// corresponding to the resolution (width × height).
+		/// 
+		/// \param channels A map of channel names to raw float32 data vectors. The size of each vector must match width × height.
+		/// \param width The width of the image in pixels.
+		/// \param height The height of the image in pixels.
+		/// \param metadata Metadata used to validate and classify the provided channels into cryptomatte 
+		///                 or legacy categories.
+		/// 
+		/// \throws std::invalid_argument if the channel list is empty or if any cryptomatte channel has a mismatched size.
+		///
 		cryptomatte(
 			std::unordered_map<std::string, std::vector<float32_t>> channels, 
 			size_t width,
@@ -97,6 +129,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// 
 		/// \returns The detected and loaded cryptomattes, there may be multiple or none per-file.
 		static std::vector<cryptomatte> load(std::filesystem::path file, bool load_preview);
+
+
+		size_t width() const;
+
+		size_t height() const;
 
 		/// \brief Checks whether this cryptomatte contains the preview (legacy) channels
 		/// 

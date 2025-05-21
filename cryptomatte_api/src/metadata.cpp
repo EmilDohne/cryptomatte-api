@@ -15,11 +15,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
 	metadata::metadata(
-		std::string name, 
-		std::string key, 
-		std::string hash, 
-		std::string conversion, 
-		std::optional<manifest> manif /*= std::nullopt */
+		std::string name,
+		std::string key,
+		std::string hash,
+		std::string conversion,
+		std::optional<NAMESPACE_CRYPTOMATTE_API::manifest> manif /* = std::nullopt */
 	)
 	{
 		m_Name = std::move(name);
@@ -107,7 +107,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				throw std::runtime_error(
 					std::format(
 						"Invalid cryptomatte metadata attribute encountered. These 5 attributes are known to the"
-						" cryptomatte specification: \{ {}, {}, {}, {}, {} \}. However, we got {} which is not"
+						" cryptomatte specification: {{ {}, {}, {}, {}, {} }}. However, we got {} which is not"
 						" valid. Full metadata key: {}",
 						s_ValidAttribs[0], s_ValidAttribs[1], s_ValidAttribs[2], s_ValidAttribs[3], s_ValidAttribs[4],
 						crypto_attribute, key
@@ -146,14 +146,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					);
 				}
 				// Only 'MurmurHash3_32' is supported by the specification at this time (v1.2.0)
-				if (value.template get<std::string> != "MurmurHash3_32")
+				if (value.template get<std::string>() != "MurmurHash3_32")
 				{
 					throw std::runtime_error(
 						fmt::format(
 							"Unable to validate metadata, invalid cryptomatte hashing method in metadata."
 							" Expected to be 'MurmurHash3_32' but instead received '{}' while reading metadata"
 							" for cryptomatte with key '{}'",
-							value.template get<std::string>,
+							value.template get<std::string>(),
 							crypto_key
 						)
 					);

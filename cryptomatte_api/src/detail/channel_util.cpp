@@ -1,6 +1,11 @@
-#include "detail/channel_util.h"
+ï»¿#include "detail/channel_util.h"
 
-
+#include <algorithm>
+#include <set>
+#include <vector>
+#include <string>
+#include <string_view>
+#include <map>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {
@@ -20,7 +25,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				auto pos = input.rfind('.');
 				if (pos == std::string_view::npos || pos == 0 || pos == input.size() - 1)
 				{
-					// No dot, dot at start, or dot at end — treat as no extension
+					// No dot, dot at start, or dot at end â€” treat as no extension
 					return { std::string(input), "" };
 				}
 
@@ -73,7 +78,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				throw std::runtime_error(
 					std::format(
 						"Unable to decode channel representation from string '{}'. Expected the following format: "
-						"\{typename\}00.r", s
+						"{{typename}}00.r", s
 					)
 				);
 			}
@@ -84,9 +89,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				throw std::runtime_error(
 					std::format(
 						"Unable to decode channel representation from string '{}' as there is not enough characters"
-						" to decode two numbers for the index. Expected the following format: \{typename\}00.r", s
+						" to decode two numbers for the index. Expected the following format: {{typename}}00.r", s
 					)
-				)
+				);
 			}
 
 			auto type_name = name.substr(0, name.size() - 2);
@@ -102,10 +107,10 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					)
 				);
 			}
-			int index = std::stoi(index_str);
+			int idx = std::stoi(index_str);
 
 			this->_typename = type_name;
-			this->index = index;
+			this->index = idx;
 			this->type = map_to_channel_type(extension);
 			this->m_OriginalChannelName = s;
 		}
@@ -113,7 +118,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		// -----------------------------------------------------------------------------------
 		// -----------------------------------------------------------------------------------
-		std::string channel_repr::channel_name()
+		std::string channel_repr::channel_name() const
 		{
 			return m_OriginalChannelName;
 		}
@@ -191,7 +196,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					{
 						throw std::runtime_error(
 							std::format(
-								"Incomplete channel set at index {} — expected 4 channels, got {}", index, channels.size()
+								"Incomplete channel set at index {} â€” expected 4 channels, got {}", index, channels.size()
 							)
 						);
 					}
@@ -199,7 +204,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					{
 						throw std::runtime_error(
 							std::format(
-								"Incomplete channel set at index {} — expected 2 or 4 channels, got {}", index, channels.size()
+								"Incomplete channel set at index {} â€” expected 2 or 4 channels, got {}", index, channels.size()
 							)
 						);
 					}

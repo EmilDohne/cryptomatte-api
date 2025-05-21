@@ -15,6 +15,8 @@
 
 #include "manifest.h"
 
+#include <OpenImageIO/imageio.h>
+
 namespace NAMESPACE_CRYPTOMATTE_API
 {
 
