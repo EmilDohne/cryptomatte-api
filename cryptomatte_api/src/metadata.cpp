@@ -54,22 +54,22 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::vector<metadata> metadata::from_spec(const OIIO::ImageSpec& spec)
+	std::vector<metadata> metadata::from_spec(const OIIO::ImageSpec& spec, std::filesystem::path image_path)
 	{
-		return metadata::from_param_value_list(spec.extra_attribs);
+		return metadata::from_param_value_list(spec.extra_attribs, image_path);
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::vector<metadata> metadata::from_param_value_list(const OIIO::ParamValueList& list)
+	std::vector<metadata> metadata::from_param_value_list(const OIIO::ParamValueList& list, std::filesystem::path image_path)
 	{
 		auto json = compressed::detail::param_value::to_json(list);
-		return from_json(json);
+		return from_json(json, image_path);
 	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::vector<metadata> metadata::from_json(const json_ordered& json)
+	std::vector<metadata> metadata::from_json(const json_ordered& json, std::filesystem::path image_path)
 	{
 		std::unordered_map<std::string, metadata> result;
 
@@ -116,7 +116,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			}
 
 			// Get a reference to the partially populated (or default-initialized) metadata.
-			metadata& ref = result[split_key[1]];
+			metadata& ref = result[crypto_key];
+			ref.m_Key = crypto_key;
 
 			// Now do the actual decoding and storing of the values
 			if (crypto_attribute == metadata::attrib_name_identifier())
@@ -212,11 +213,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				/// parsing from json or string.
 				if (value.is_string())
 				{
-					ref.m_Manifest = NAMESPACE_CRYPTOMATTE_API::manifest::from_str(value.template get<std::string>());
+					ref.m_Manifest = NAMESPACE_CRYPTOMATTE_API::manifest::load(key, value.template get<std::string>(), image_path);
 				}
 				else
 				{
-					ref.m_Manifest = NAMESPACE_CRYPTOMATTE_API::manifest(value);
+					ref.m_Manifest = NAMESPACE_CRYPTOMATTE_API::manifest::load(key, value.dump(), image_path);
 				}
 			}
 		}

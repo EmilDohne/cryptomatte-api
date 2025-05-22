@@ -11,7 +11,7 @@ using namespace NAMESPACE_CRYPTOMATTE_API;
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::map_to_channel_type valid values")
+TEST_CASE("detail::map_to_channel_type valid values")
 {
 	auto res_r_1 = detail::map_to_channel_type("r");
 	auto res_r_2 = detail::map_to_channel_type("R");
@@ -45,7 +45,7 @@ TEST_CASE("Test detail::map_to_channel_type valid values")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::map_to_channel_type invalid value"
+TEST_CASE("detail::map_to_channel_type invalid value"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -57,7 +57,7 @@ TEST_CASE("Test detail::map_to_channel_type invalid value"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr from valid strings")
+TEST_CASE("detail::channel_repr from valid strings")
 {
 	auto repr_1 = detail::channel_repr("MyCrypto00.R");
 	auto repr_2 = detail::channel_repr("SomeVal00.a");
@@ -66,25 +66,25 @@ TEST_CASE("Test detail::channel_repr from valid strings")
 	CHECK(repr_1._typename == "MyCrypto");
 	CHECK(repr_1.index == 0);
 	CHECK(repr_1.type == detail::channel_type::red);
-	CHECK(repr_1.channelname() == "MyCrypto00.R");
+	CHECK(repr_1.channel_name() == "MyCrypto00.R");
 
 	CHECK(repr_2._typename == "SomeVal");
 	CHECK(repr_2.index == 0);
 	CHECK(repr_2.type == detail::channel_type::alpha);
-	CHECK(repr_2.channelname() == "SomeVal00.a");
+	CHECK(repr_2.channel_name() == "SomeVal00.a");
 
 
 	CHECK(repr_3._typename == "typename");
 	CHECK(repr_3.index == 99);
 	CHECK(repr_3.type == detail::channel_type::red);
-	CHECK(repr_3.channelname() == "typename99.R");
+	CHECK(repr_3.channel_name() == "typename99.R");
 
 }
 
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr no typename"
+TEST_CASE("detail::channel_repr no typename"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -96,7 +96,7 @@ TEST_CASE("Test detail::channel_repr no typename"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr no index"
+TEST_CASE("detail::channel_repr no index"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -108,7 +108,7 @@ TEST_CASE("Test detail::channel_repr no index"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr no channel type"
+TEST_CASE("detail::channel_repr no channel type"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -120,7 +120,7 @@ TEST_CASE("Test detail::channel_repr no channel type"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr single index padding"
+TEST_CASE("detail::channel_repr single index padding"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -132,19 +132,20 @@ TEST_CASE("Test detail::channel_repr single index padding"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr index 3 digits"
-	* doctest::no_breaks(true)
-	* doctest::no_output(true)
-	* doctest::should_fail(true)
-)
+TEST_CASE("detail::channel_repr index 3 digits")
 {
-	auto _ = detail::channel_repr("CryptoAsset123.R");
+	// Since the typename may include anything, this includes numbers. We just make sure to identify based
+	// of the last two digits
+	auto result = detail::channel_repr("CryptoAsset123.R");
+	CHECK(result._typename == "CryptoAsset1");
+	CHECK(result.index == 23);
+	CHECK(result.type == detail::channel_type::red);
 }
 
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::channel_repr ordering")
+TEST_CASE("detail::channel_repr ordering")
 {
 	SUBCASE("Order by index")
 	{
@@ -183,7 +184,7 @@ TEST_CASE("Test detail::channel_repr ordering")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels already sorted")
+TEST_CASE("detail::sort_and_validate_channels already sorted")
 {
 	std::vector<std::string> input_channels = {
 		"Cryptomatte00.r",
@@ -202,7 +203,7 @@ TEST_CASE("Test detail::sort_and_validate_channels already sorted")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels out of order")
+TEST_CASE("detail::sort_and_validate_channels out of order")
 {
 	std::vector<std::string> input_channels = {
 		"Cryptomatte00.r",
@@ -231,7 +232,7 @@ TEST_CASE("Test detail::sort_and_validate_channels out of order")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels partial rank-coverage")
+TEST_CASE("detail::sort_and_validate_channels partial rank-coverage")
 {
 	std::vector<std::string> input_channels = {
 		"Cryptomatte00.r",
@@ -256,7 +257,7 @@ TEST_CASE("Test detail::sort_and_validate_channels partial rank-coverage")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels missing rank-coverage"
+TEST_CASE("detail::sort_and_validate_channels missing rank-coverage"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -274,14 +275,13 @@ TEST_CASE("Test detail::sort_and_validate_channels missing rank-coverage"
 	};
 	// This should now throw.
 	auto sorted = detail::sort_and_validate_channels(input_channels);
-	test_util::check_vector_verbose(sorted, expected_channels);
 }
 
 
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels missing channel"
+TEST_CASE("detail::sort_and_validate_channels missing channel"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -304,7 +304,7 @@ TEST_CASE("Test detail::sort_and_validate_channels missing channel"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels missing index"
+TEST_CASE("detail::sort_and_validate_channels missing index"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -328,7 +328,7 @@ TEST_CASE("Test detail::sort_and_validate_channels missing index"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels missing index"
+TEST_CASE("detail::sort_and_validate_channels missing index"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)
@@ -352,7 +352,7 @@ TEST_CASE("Test detail::sort_and_validate_channels missing index"
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("Test detail::sort_and_validate_channels empty"
+TEST_CASE("detail::sort_and_validate_channels empty"
 	* doctest::no_breaks(true)
 	* doctest::no_output(true)
 	* doctest::should_fail(true)

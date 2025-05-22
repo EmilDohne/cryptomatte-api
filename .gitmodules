@@ -10,3 +10,6 @@
 [submodule "thirdparty/vcpkg"]
 	path = thirdparty/vcpkg
 	url = https://github.com/microsoft/vcpkg
+[submodule "thirdparty/spdlog"]
+	path = thirdparty/spdlog
+	url = https://github.com/gabime/spdlog

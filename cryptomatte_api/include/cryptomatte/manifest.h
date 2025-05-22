@@ -9,6 +9,7 @@
 #include <optional>
 #include <vector>
 #include <bit>
+#include <variant>
 
 #include "detail/macros.h"
 #include "detail/json_alias.h"
@@ -32,22 +33,37 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		/// Load the manifest from the passed image metadata, optionally returning a decoded manifest.
 		/// 
+		/// This function scans the metadata for a manifest string or filename, attempts to read and decode
+		/// the manifest data, and returns it if successful. If a sidecar file is used (very rare), the
+		/// function will also attempt to load it from disk.
 		/// 
+		/// \param manif_key The metadata key for the manifest, will be used to determine whether its a sidecar or embedded.
+		/// \param manif_value The value found on the cryptomattes' 'manifest' or 'manif_file' value, we willtake care of
+		///					   parsing internally.
+		/// \param image_path The path to the image that the cryptomatte was loaded from, required to successfully decode
+		///					  sidecar files.
 		/// 
-		/// \param metadata The unfiltered metadata as it is read from the image file
-		/// \param image_path The path to the image file we are loading. This is only relevant if the 
-		///					  image has a sidecar manifest file. In practice this is exceedingly rare.
-		/// 
-		/// \return A cryptomatte manifest if it exists within the metadata
-		static std::optional<manifest> load(
-			const std::unordered_map<std::string, std::string>& metadata,
-			std::filesystem::path image_path
-		);
+		/// \return A decoded manifest if present and successfully parsed; otherwise, std::nullopt.
+		static std::optional<manifest> load(std::string manif_key, std::string manif_value, std::filesystem::path image_path) noexcept;
 
 		/// Check whether the manifest contains the passed name.
+		/// 
+		/// \param name The name to check for existence within the manifest.
+		/// 
+		/// \return True if the name exists in the manifest, false otherwise.
 		bool contains(std::string_view name);
 
-		/// Retrieve the mapping of 
+		/// Retrieve the full name-to-hash mapping, cast to the specified type.
+		/// 
+		/// This function provides access to the internal name-hash mapping in the desired format:
+		/// - `uint32_t`: The raw internal representation (default).
+		/// - `float32_t`: A bit-cast form of the hash, used for Cryptomatte rendering IDs.
+		/// - `std::string`: A hexadecimal string representation of the hash.
+		///
+		/// \tparam T The type to return the hash values as, defaulting to `uint32_t`. Must be one of:
+		///           `float32_t`, `std::string`, or `uint32_t`.
+		/// 
+		/// \return A vector of name-hash pairs in the specified format.
 		template <typename T = uint32_t>
 			requires std::is_same_v<T, float32_t> || std::is_same_v<T, std::string> || std::is_same_v<T, uint32_t>
 		std::vector<std::pair<std::string, T>> mapping()
@@ -84,7 +100,6 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			}
 		}
 
-		 
 		/// Get the hash associated with the given name
 		/// 
 		/// Returns it as the specified template parameter which may be `float32_t`, `std::string` or `uint32_t`

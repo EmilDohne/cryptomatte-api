@@ -188,7 +188,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		}
 
 		// Retrieve the metadatas associated with this image
-		auto metadatas = NAMESPACE_CRYPTOMATTE_API::metadata::from_spec(input_ptr->spec());
+		auto metadatas = NAMESPACE_CRYPTOMATTE_API::metadata::from_spec(input_ptr->spec(), file);
 		// Short-circuit if not metadata was found -> no cryptomatte.
 		if (metadatas.size() == 0)
 		{

@@ -4,7 +4,7 @@ file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp"
 add_library(cryptomatte_api ${MY_SOURCES})
 target_include_directories(cryptomatte_api PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(cryptomatte_api PRIVATE "${PROJECT_SOURCE_DIR}/include/cryptomatte")
-target_link_libraries(cryptomatte_api PUBLIC compressed_image)
+target_link_libraries(cryptomatte_api PUBLIC compressed_image spdlog::spdlog_header_only)
 
 if (MSVC)
 	target_compile_options(cryptomatte_api PRIVATE /utf-8 /MP /DNOMINMAX)

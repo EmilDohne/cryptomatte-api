@@ -54,13 +54,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// This function is equivalent to calling `from_param_value_list(spec.extra_attribs)`.
 		/// 
 		/// \param spec The ImageSpec to deserialize the metadata from.
+		/// \param image_path The image path that the cryptomatte was loaded from, required if the cryptomatte file has
+		///					  a sidecar manifest.
 		/// 
 		/// \throws std::runtime_error If the metadata is malformed or otherwise incorrect in its definition.
 		///							   On failure of a single cryptomatte this function will abort and not parse the 
 		///							   other, potentially valid cryptomattes.
 		/// 
 		/// \returns a vector of metadata definitions, there is no limit to how many there may be in a single file.
-		static std::vector<metadata> from_spec(const OIIO::ImageSpec& spec);
+		static std::vector<metadata> from_spec(const OIIO::ImageSpec& spec, std::filesystem::path image_path);
 
 		/// Deserialize the cryptomattes' metadata from a param value list.
 		///
@@ -69,13 +71,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// is no cryptomatte in the file. The individual definitions are separated by their `key` field.
 		/// 
 		/// \param list The ParamValueList to deserialize the metadata from.
+		/// \param image_path The image path that the cryptomatte was loaded from, required if the cryptomatte file has
+		///					  a sidecar manifest.
 		/// 
 		/// \throws std::runtime_error If the metadata is malformed or otherwise incorrect in its definition.
 		///							   On failure of a single cryptomatte this function will abort and not parse the 
 		///							   other, potentially valid cryptomattes.
 		/// 
 		/// \returns a vector of metadata definitions, there is no limit to how many there may be in a single file.
-		static std::vector<metadata> from_param_value_list(const OIIO::ParamValueList& list);
+		static std::vector<metadata> from_param_value_list(const OIIO::ParamValueList& list, std::filesystem::path image_path);
 
 		/// Deserialize the cryptomattes' metadata from a json of the images' metadata.
 		///
@@ -84,13 +88,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// is no cryptomatte in the file. The individual definitions are separated by their `key` field.
 		/// 
 		/// \param json The ordered json to deserialize the metadata from.
+		/// \param image_path The image path that the cryptomatte was loaded from, required if the cryptomatte file has
+		///					  a sidecar manifest.
 		/// 
 		/// \throws std::runtime_error If the metadata is malformed or otherwise incorrect in its definition.
 		///							   On failure of a single cryptomatte this function will abort and not parse the 
 		///							   other, potentially valid cryptomattes.
 		/// 
 		/// \returns a vector of metadata definitions, there is no limit to how many there may be in a single file.
-		static std::vector<metadata> from_json(const json_ordered& json);
+		static std::vector<metadata> from_json(const json_ordered& json, std::filesystem::path image_path);
 
 		/// Retrieve all the cryptomatte channel names for the given list of channelnames in the order they came in.
 		/// Filters all of them according to `is_valid` and returns all the channel names matching this.

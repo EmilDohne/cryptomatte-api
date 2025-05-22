@@ -8,6 +8,10 @@
 #include <format>
 #include <mutex>
 
+#include <cryptomatte/logger.h>
+#include <spdlog/spdlog.h>
+
+
 
 /// Create a reporter which prints out failure statistics at the end
 struct FailureReporter : public doctest::ConsoleReporter
@@ -93,6 +97,7 @@ REGISTER_LISTENER("failure", /*priority=*/1, FailureReporter);
 
 int main()
 {
+	NAMESPACE_CRYPTOMATTE_API::get_logger()->set_level(spdlog::level::critical);
 	doctest::Context context;
 	int res = context.run();
 

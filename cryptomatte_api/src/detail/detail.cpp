@@ -24,7 +24,20 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			}
 
 			// decode using base-16
-			auto res = std::stoull(std::string(hex), nullptr, 16);
+			unsigned long long res = 0;
+			try
+			{
+				res = std::stoull(std::string(hex), nullptr, 16);
+			}
+			catch (const std::exception& e)
+			{
+				throw std::runtime_error(
+					std::format(
+						"Invalid hex string '{}' encountered: {}",
+						hex, e.what()
+					)
+				);
+			}
 			if (res > std::numeric_limits<uint32_t>::max())
 			{
 				throw std::runtime_error(

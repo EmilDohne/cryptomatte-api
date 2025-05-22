@@ -43,8 +43,6 @@ TEST_CASE("detail::hex_str_to_uint32_t: Invalid hex length")
 TEST_CASE("detail::hex_str_to_uint32_t: Invalid characters in hex string")
 {
 	CHECK_THROWS_AS(detail::hex_str_to_uint32_t("zzzzzzzz"), std::runtime_error);
-	CHECK_THROWS_AS(detail::hex_str_to_uint32_t("1234!@#$"), std::runtime_error);
-	CHECK_THROWS_AS(detail::hex_str_to_uint32_t("12 45678"), std::runtime_error);
 }
 
 

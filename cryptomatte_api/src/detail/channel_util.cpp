@@ -83,8 +83,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				);
 			}
 
-			// The name must have at least two digits for the index.
-			if (name.size() < 2)
+			// The name must have at least three items for the index and a typename.
+			if (name.size() < 3)
 			{
 				throw std::runtime_error(
 					std::format(

@@ -12,7 +12,7 @@ endif()
 if (MAIN_PROJECT)
     set(CRYPTOMATTE_API_EXTENDED_WARNINGS ON)
     set(CRYPTOMATTE_API_IMAGE_USE_VCPKG ON)
-    option(CRYPTOMATTE_API_BUILD_TESTS ON)
+    set(CRYPTOMATTE_API_BUILD_TESTS ON)
 endif()
 
 
@@ -36,6 +36,10 @@ find_package(OpenImageIO CONFIG REQUIRED)
 # CompressedImage for loading images into a compressed memory buffer as well as compressing the mattes in-memory
 set(COMPRESSED_IMAGE_USE_VCPKG OFF)
 add_subdirectory(thirdparty/compressed-image)
+
+# spdlog for loggig
+set(SPDLOG_USE_STD_FORMAT ON)
+add_subdirectory(thirdparty/spdlog)
 
 # Projects
 # --------------------------------------------------------------------------

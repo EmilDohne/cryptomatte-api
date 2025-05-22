@@ -81,6 +81,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			while (s.substr(start_pos).starts_with(strip) && _count < max_strips)
 			{
 				start_pos += strip.size();
+				++_count;
 			}
 
 			// std::basic_string::substr() may throw if we index past the end, here instead we just return an empty
