@@ -317,8 +317,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		/// Get the metadata associated with the cryptomatte file, this includes things such as the channel names,
 		/// the unique key identifier and the cryptomatte manifest (a mapping of human-readable names to their hashes).
-		NAMESPACE_CRYPTOMATTE_API::metadata metadata();
-		
+		NAMESPACE_CRYPTOMATTE_API::metadata& metadata();
+		const NAMESPACE_CRYPTOMATTE_API::metadata& metadata() const;
+
 	private:
 		/// The channels related to this cryptomatte mapped by their full names.
 		/// this may look as follows:
