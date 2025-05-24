@@ -307,9 +307,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		// often times DCCs will write these names according to what they do with other channels.
 		// Clarisse e.g. will always write out the full name such as 'red'.
 		if (
-			res.ends_with(".r") || res.ends_with(".g") || res.ends_with(".b") ||
-			res.ends_with(".R") || res.ends_with(".G") || res.ends_with(".B") ||
-			res.ends_with(".red") || res.ends_with(".green") || res.ends_with(".blue")
+			res.ends_with(".r") || res.ends_with(".g") || res.ends_with(".b") || res.ends_with(".a") ||
+			res.ends_with(".R") || res.ends_with(".G") || res.ends_with(".B") || res.ends_with(".A") ||
+			res.ends_with(".red") || res.ends_with(".green") || res.ends_with(".blue") || res.ends_with(".alpha")
 			)
 		{
 			return true;
