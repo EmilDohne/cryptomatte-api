@@ -139,6 +139,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			);
 		}
 
+		size_t size() const noexcept;
+
 	private:
 		// The mapping of names into their respective hashes. On-disk these would be stored as e.g.
 		// {"bunny":"13851a76", "default" : "42c9679f"}

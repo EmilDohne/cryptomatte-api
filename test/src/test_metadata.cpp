@@ -48,19 +48,19 @@ TEST_CASE("metadata channel name validation")
     metadata meta("CryptoAsset", "abc1234", "MurmurHash3_32", "uint32_to_float32");
 
     // Valid channel
-    CHECK(meta.is_valid("CryptoAsset00.r"));
-    CHECK(meta.is_valid("CryptoAsset01.g"));
+    CHECK(meta.is_valid_channel_name("CryptoAsset00.r"));
+    CHECK(meta.is_valid_channel_name("CryptoAsset01.g"));
 
     // Invalid channel
-    CHECK_FALSE(meta.is_valid("CryptoAsset.r"));
-    CHECK_FALSE(meta.is_valid("WrongName00.r"));
+    CHECK_FALSE(meta.is_valid_channel_name("CryptoAsset.r"));
+    CHECK_FALSE(meta.is_valid_channel_name("WrongName00.r"));
 
     // Valid legacy
-    CHECK(meta.is_valid_legacy("CryptoAsset.r"));
-    CHECK(meta.is_valid_legacy("CryptoAsset.g"));
+    CHECK(meta.is_valid_legacy_channel_name("CryptoAsset.r"));
+    CHECK(meta.is_valid_legacy_channel_name("CryptoAsset.g"));
 
     // Invalid legacy
-    CHECK_FALSE(meta.is_valid_legacy("CryptoAsset00.r"));
+    CHECK_FALSE(meta.is_valid_legacy_channel_name("CryptoAsset00.r"));
 }
 
 

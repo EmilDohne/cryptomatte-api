@@ -31,11 +31,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		for (const auto& [name, _] : channels)
 		{
-			if (m_Metadata.is_valid(name))
+			if (m_Metadata.is_valid_channel_name(name))
 			{
 				cryptomatte_channels.push_back(name);
 			}
-			else if (m_Metadata.is_valid_legacy(name))
+			else if (m_Metadata.is_valid_legacy_channel_name(name))
 			{
 				legacy_channels.push_back(name);
 			}
@@ -127,11 +127,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		for (const auto& [name, _] : channels)
 		{
-			if (m_Metadata.is_valid(name))
+			if (m_Metadata.is_valid_channel_name(name))
 			{
 				cryptomatte_channels.push_back(name);
 			}
-			else if (m_Metadata.is_valid_legacy(name))
+			else if (m_Metadata.is_valid_legacy_channel_name(name))
 			{
 				legacy_channels.push_back(name);
 			}
@@ -447,7 +447,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	NAMESPACE_CRYPTOMATTE_API::metadata cryptomatte::metadata()
+	NAMESPACE_CRYPTOMATTE_API::metadata& cryptomatte::metadata()
+	{
+		return m_Metadata;
+	}
+
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
+	const NAMESPACE_CRYPTOMATTE_API::metadata& cryptomatte::metadata() const
 	{
 		return m_Metadata;
 	}

@@ -118,4 +118,12 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		return false;
 	}
 
+
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
+	size_t manifest::size() const noexcept
+	{
+		return m_Mapping.size();
+	}
+
 } // NAMESPACE_CRYPTOMATTE_API

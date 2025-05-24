@@ -120,7 +120,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// 
 		/// \param channel_name The name to match against.
 		/// \returns Whether the passed `channel_name` is a channel name.
-		bool is_valid(std::string channel_name) const;
+		bool is_valid_channel_name(std::string channel_name) const;
 
 		/// Check whether the passed channel name is a legacy channel name of this metadata.
 		/// Legacy channels in cryptomattes are one of the following:
@@ -133,7 +133,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// 
 		/// \param channel_name The name to match against.
 		/// \returns Whether the passed `channel_name` is a legacy channel name.
-		bool is_valid_legacy(std::string channel_name) const;
+		bool is_valid_legacy_channel_name(std::string channel_name) const;
 
 		/// Retrieve the name, also referred to as 'typename' of the cryptomatte.
 		///

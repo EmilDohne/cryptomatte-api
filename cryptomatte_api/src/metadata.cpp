@@ -254,7 +254,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		for (const auto& channelname : channelnames)
 		{
-			if (this->is_valid(channelname))
+			if (this->is_valid_channel_name(channelname))
 			{
 				out.push_back(channelname);
 			}
@@ -271,7 +271,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		for (const auto& channelname : channelnames)
 		{
-			if (this->is_valid_legacy(channelname))
+			if (this->is_valid_legacy_channel_name(channelname))
 			{
 				out.push_back(channelname);
 			}
@@ -282,7 +282,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	bool metadata::is_valid(std::string channel_name) const
+	bool metadata::is_valid_channel_name(std::string channel_name) const
 	{
 		if (!channel_name.starts_with(this->name()))
 		{
@@ -320,7 +320,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	bool metadata::is_valid_legacy(std::string channel_name) const
+	bool metadata::is_valid_legacy_channel_name(std::string channel_name) const
 	{
 		if (!channel_name.starts_with(this->name()))
 		{
