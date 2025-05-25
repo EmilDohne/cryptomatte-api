@@ -422,14 +422,16 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			// Iterate the chunks, decompressing on the fly
 			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
 			{
-				// Will std::fill into the chunk_buffer (since its a lazy schunk).
-				out.get_chunk(std::span<float32_t>(chunk_buffer), chunk_idx);
+				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
 
-				rank_channel.get_chunk(std::span<float32_t>(rank_chunk), chunk_idx);
-				covr_channel.get_chunk(std::span<float32_t>(covr_chunk), chunk_idx);
+				// Will std::fill into the chunk_buffer (since its a lazy schunk).
+				out.get_chunk(std::span<float32_t>(chunk_buffer.data(), chunk_num_elems), chunk_idx);
+
+				rank_channel.get_chunk(std::span<float32_t>(rank_chunk.data(), chunk_num_elems), chunk_idx);
+				covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
 
 				// Accumulate the output pixel from all of the coverage channels.
-				auto pixel_iota = std::views::iota(size_t{ 0 }, rank_chunk.size());
+				auto pixel_iota = std::views::iota(size_t{ 0 }, chunk_num_elems);
 				std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
 					{
 						if (rank_chunk[idx] == hash_val)
@@ -439,7 +441,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					});
 
 				// Set the chunk again (will recompress).
-				out.set_chunk(std::span<float32_t>(chunk_buffer), chunk_idx);
+				out.set_chunk(std::span<float32_t>(chunk_buffer.data(), chunk_num_elems), chunk_idx);
 			}
 		}
 
