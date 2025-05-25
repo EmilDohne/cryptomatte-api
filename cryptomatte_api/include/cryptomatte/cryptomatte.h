@@ -170,7 +170,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// extracted they are entirely in your control and extracting them again is not possible.
 		/// 
 		/// \return The legacy/preview channels (if present)
-		std::unordered_map<std::string, compressed::channel<float32_t>> extract_compressed();
+		std::unordered_map<std::string, compressed::channel<float32_t>> extract_preview_compressed();
 
 		/// \brief Extract the mask with the given name from the cryptomatte, computing the pixels as we go.
 		/// 
@@ -300,13 +300,6 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed(std::vector<uint32_t> hashes);
 
 		/// \brief Extract all of the cryptomatte masks into compressed buffers, computing them on the fly
-		/// 
-		/// \param use_manifest Whether to use the manifest to preallocate the correct number of items before the hot loop.
-		///						This allows for quite some optimizations so whenever possible this should be turned on.
-		///						It may however throw a std::out_of_range if the manifest is faulty or incomplete.
-		///						Therefore, often it is desirable to wrap this call in a try; catch falling back to the
-		///						potentially slower, non-manifest based decoding. If no cryptomatte manifest exists,
-		///						and this is true this function will run as if `use_manifest` was off.
 		/// 
 		/// \returns The decoded cryptomattes mapped by their name (if the manifest exists) or by their hashes in std::string
 		///			 form.

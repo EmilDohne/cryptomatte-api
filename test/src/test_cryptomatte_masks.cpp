@@ -79,6 +79,35 @@ namespace
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
+TEST_CASE("cryptomatte::mask invalid mask name")
+{
+    auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);
+    REQUIRE(cmattes.size() == 1);
+    CHECK_THROWS_AS(cmattes[0].mask("invalid name"), std::invalid_argument);
+    CHECK_THROWS_AS(cmattes[0].mask_compressed("invalid name"), std::invalid_argument);
+}
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
+TEST_CASE("cryptomatte::mask invalid mask hash")
+{
+    auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);
+    REQUIRE(cmattes.size() == 1);
+
+    // This is not a valid hash, but because we don't enforce correctness for these this will simply
+    // be empty
+    auto res = cmattes[0].mask(123456);
+    test_util::check_vector_verbose(res, static_cast<float32_t>(0));
+
+    auto res_compressed = cmattes[0].mask_compressed(123456);
+    auto data = res_compressed.get_decompressed();
+    test_util::check_vector_verbose(res, static_cast<float32_t>(0));
+}
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
 TEST_CASE("cryptomatte::mask check arnold_one_crypto_sidecar_manif.exr")
 {
     auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);
@@ -88,6 +117,21 @@ TEST_CASE("cryptomatte::mask check arnold_one_crypto_sidecar_manif.exr")
     {
         auto& crypto_object = cmattes[0];
         iterate_manif_and_check_mask(crypto_object, "reference/arnold/crypto_object");
+    }
+}
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
+TEST_CASE("cryptomatte::masks check arnold_one_crypto_sidecar_manif.exr")
+{
+    auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);
+    REQUIRE(cmattes.size() == 1);
+
+    SUBCASE("crypto_object")
+    {
+        auto& crypto_object = cmattes[0];
+        auto masks = crypto_object.masks();
     }
 }
 

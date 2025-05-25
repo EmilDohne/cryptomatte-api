@@ -283,7 +283,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-	std::unordered_map<std::string, compressed::channel<float32_t>> cryptomatte::extract_compressed()
+	std::unordered_map<std::string, compressed::channel<float32_t>> cryptomatte::extract_preview_compressed()
 	{
 		return std::move(m_LegacyChannels);
 	}
@@ -446,6 +446,41 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		}
 
 		return std::move(out);
+	}
+
+
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
+	std::unordered_map<std::string, compressed::channel<float32_t>> cryptomatte::masks_compressed() const
+	{
+		std::unordered_map<std::string, compressed::channel<float32_t>> out;
+		if (m_Metadata.manifest())
+		{
+			out.reserve(m_Metadata.manifest().value().size());
+		}
+
+		const auto& first_channel = this->m_Channels.begin()->second;
+		const auto _width = this->width();
+		const auto _height = this->width();
+		auto generate_lazy_channel = [&]()
+			{
+				// Generate a lazy channel that we will use to fill, using a lazy channel allows us to 
+				// not pay any memory allocation cost beyond a single chunk which will be reused. 
+				// Ensure we use the same parameters as our channels as the ctor taking compressed::channel instances
+				// and thus have non-standard block and chunk sizes.
+				return compressed::channel<float32_t>::zeros(
+					_width,
+					_height,
+					first_channel.compression(),
+					static_cast<uint8_t>(first_channel.compression_level()),
+					first_channel.block_size(),
+					first_channel.chunk_size()
+				);
+			};
+
+		// Use a vector that doesn't default initialize, as compressed::channel::get_chunk will internally use
+		// std::fill on the buffer.
+		compressed::util::default_init_vector<float32_t> chunk_buffer(first_channel.chunk_size());
 	}
 
 	// -----------------------------------------------------------------------------------
