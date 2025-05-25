@@ -32,6 +32,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 		/w44062 
 		/w44464 
 		/w45264
-		/wd4702  # Disable C4702: unreachable code
+		/wd4702  # Disable C4702: unreachable code, seems to trigger in release builds from fmt lib.
 	)
 endif()

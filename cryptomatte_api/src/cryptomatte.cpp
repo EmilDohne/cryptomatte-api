@@ -1,6 +1,8 @@
 #include "cryptomatte.h"
 
 #include <cassert>
+#include <ranges>
+#include <algorithm>
 
 #include "metadata.h"
 #include "detail/channel_util.h"
@@ -325,18 +327,24 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			const auto& rank_channel = m_Channels[i].second;
 			const auto& covr_channel = m_Channels[i + 1].second;
 
-			std::vector<float32_t> rank_chunk(rank_channel.chunk_size() / sizeof(float32_t));
-			std::vector<float32_t> covr_chunk(covr_channel.chunk_size() / sizeof(float32_t));
+			size_t chunk_size_elems = rank_channel.chunk_size() / sizeof(float32_t);
+
+			std::vector<float32_t> rank_chunk(chunk_size_elems);
+			std::vector<float32_t> covr_chunk(chunk_size_elems);
 
 			// Iterate the chunks, decompressing on the fly
 			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
 			{
-				size_t base_idx = rank_channel.chunk_size() * chunk_idx;
+				size_t base_idx = chunk_size_elems * chunk_idx;
 				rank_channel.get_chunk(std::span<float32_t>(rank_chunk), chunk_idx);
 				covr_channel.get_chunk(std::span<float32_t>(covr_chunk), chunk_idx);
 
+				// Since the last chunk may hold less than `chunk_size` elements, we must account for this and ensure
+				// we are only at most going to the end of the `out` vector.
+				size_t num_elements = std::min<size_t>(out.size() - base_idx, chunk_size_elems);
+
 				// Accumulate the output pixel from all of the coverage channels.
-				auto pixel_iota = std::views::iota(size_t{ 0 }, rank_chunk.size());
+				auto pixel_iota = std::views::iota(size_t{ 0 }, num_elements);
 				std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
 					{
 						if (rank_chunk[idx] == hash_val)

@@ -66,7 +66,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \return A vector of name-hash pairs in the specified format.
 		template <typename T = uint32_t>
 			requires std::is_same_v<T, float32_t> || std::is_same_v<T, std::string> || std::is_same_v<T, uint32_t>
-		std::vector<std::pair<std::string, T>> mapping()
+		std::vector<std::pair<std::string, T>> mapping() const
 		{
 			// Same as we store it, return as is
 			if constexpr (std::is_same_v<T, uint32_t>)
@@ -111,7 +111,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \return The hash at the given name.
 		template <typename T = uint32_t>
 			requires std::is_same_v<T, float32_t> || std::is_same_v<T, std::string> || std::is_same_v<T, uint32_t>
-		T hash(std::string_view name)
+		T hash(std::string_view name) const
 		{
 			for (const auto& [key, value] : m_Mapping)
 			{

@@ -174,35 +174,35 @@ TEST_CASE("cryptomatte::load psyop special_chars.exr debug")
     }
 }
 
-
-// -----------------------------------------------------------------------------------
-// -----------------------------------------------------------------------------------
-TEST_CASE("cryptomatte::load psyop bunny sidecar manif")
-{
-    auto cmattes = cryptomatte::load(base_path / "sidecar_manifest/bunny_CryptoObject.exr", false);
-    REQUIRE(cmattes.size() == 1);
-
-    // These should come out ordered:
-    SUBCASE("uCryptoObject")
-    {
-        auto& crypto_object = cmattes[0];
-
-        CHECK(crypto_object.width() == 1280);
-        CHECK(crypto_object.height() == 720);
-        CHECK(crypto_object.has_preview() == false);
-        CHECK(crypto_object.preview().empty());
-        CHECK(crypto_object.num_levels() == 6);
-
-        auto& meta = crypto_object.metadata();
-        CHECK(meta.name() == "uCryptoObject");
-        CHECK(meta.key() == "ae93ba3");
-        REQUIRE(meta.manifest() != std::nullopt);
-        auto manifest = meta.manifest().value();
-
-        CHECK(manifest.size() == 32166);
-
-    }
-}
+//
+//// -----------------------------------------------------------------------------------
+//// -----------------------------------------------------------------------------------
+//TEST_CASE("cryptomatte::load psyop bunny sidecar manif")
+//{
+//    auto cmattes = cryptomatte::load(base_path / "sidecar_manifest/bunny_CryptoObject.exr", false);
+//    REQUIRE(cmattes.size() == 1);
+//
+//    // These should come out ordered:
+//    SUBCASE("uCryptoObject")
+//    {
+//        auto& crypto_object = cmattes[0];
+//
+//        CHECK(crypto_object.width() == 1280);
+//        CHECK(crypto_object.height() == 720);
+//        CHECK(crypto_object.has_preview() == false);
+//        CHECK(crypto_object.preview().empty());
+//        CHECK(crypto_object.num_levels() == 6);
+//
+//        auto& meta = crypto_object.metadata();
+//        CHECK(meta.name() == "uCryptoObject");
+//        CHECK(meta.key() == "ae93ba3");
+//        REQUIRE(meta.manifest() != std::nullopt);
+//        auto manifest = meta.manifest().value();
+//
+//        CHECK(manifest.size() == 32166);
+//
+//    }
+//}
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------

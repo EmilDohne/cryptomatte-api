@@ -20,3 +20,11 @@ add_custom_command(TARGET cryptomatte_api_test POST_BUILD
 add_custom_command(TARGET cryptomatte_api_test POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E echo 
                     "Finished copying test files to output directory $<TARGET_FILE_DIR:cryptomatte_api_test>/images")
+
+# Copy the references/ folder to the build dir to run the tests
+add_custom_command(TARGET cryptomatte_api_test POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_CURRENT_SOURCE_DIR}/reference/ $<TARGET_FILE_DIR:cryptomatte_api_test>/reference)
+add_custom_command(TARGET cryptomatte_api_test POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E echo 
+                    "Finished copying test files to output directory $<TARGET_FILE_DIR:cryptomatte_api_test>/reference")

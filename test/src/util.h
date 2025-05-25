@@ -9,13 +9,6 @@
 namespace test_util
 {
 
-	/// Parametrize the given test lambda for the given types.
-	template <typename... Types, typename Lambda>
-	void parametrize(Lambda&& lambda)
-	{
-		(lambda(Types{}), ...);
-	}
-
 	namespace detail
 	{
 		template <typename Container1, typename Container2>
