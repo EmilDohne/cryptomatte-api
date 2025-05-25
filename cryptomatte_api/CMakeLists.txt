@@ -4,7 +4,11 @@ file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp"
 add_library(cryptomatte_api ${MY_SOURCES})
 target_include_directories(cryptomatte_api PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(cryptomatte_api PRIVATE "${PROJECT_SOURCE_DIR}/include/cryptomatte")
-target_link_libraries(cryptomatte_api PUBLIC compressed_image spdlog::spdlog_header_only)
+target_link_libraries(cryptomatte_api PUBLIC
+	compressed_image 
+	spdlog::spdlog_header_only 
+	OpenImageIO::OpenImageIO
+)
 
 if (MSVC)
 	target_compile_options(cryptomatte_api PRIVATE /utf-8 /MP /DNOMINMAX)
@@ -28,5 +32,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 		/w44062 
 		/w44464 
 		/w45264
+		/wd4702  # Disable C4702: unreachable code
 	)
 endif()
