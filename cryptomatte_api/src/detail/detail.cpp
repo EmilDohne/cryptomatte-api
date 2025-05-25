@@ -50,6 +50,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 			return static_cast<uint32_t>(res);
 		}
-	}
 
-}
+		// -----------------------------------------------------------------------------------
+		// -----------------------------------------------------------------------------------
+		std::string uint32_t_to_hex_str(uint32_t value)
+		{
+			return std::format("{:08x}", value);
+		}
+
+	} // detail
+
+} // NAMESPACE_CRYPTOMATTE_API

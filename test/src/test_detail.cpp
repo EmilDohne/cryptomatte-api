@@ -17,6 +17,11 @@ TEST_CASE("detail::hex_str_to_uint32_t: Valid hex string")
 	CHECK(detail::hex_str_to_uint32_t("00000001") == 0x00000001);
 	CHECK(detail::hex_str_to_uint32_t("ffffffff") == 0xFFFFFFFF);
 	CHECK(detail::hex_str_to_uint32_t("deadbeef") == 0xDEADBEEF);
+
+	CHECK(detail::uint32_t_to_hex_str(0x00000000) == "00000000");
+	CHECK(detail::uint32_t_to_hex_str(0x00000001) == "00000001");
+	CHECK(detail::uint32_t_to_hex_str(0xFFFFFFFF) == "ffffffff");
+	CHECK(detail::uint32_t_to_hex_str(0xDEADBEEF) == "deadbeef");
 }
 
 // -----------------------------------------------------------------------------------

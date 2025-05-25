@@ -123,21 +123,6 @@ TEST_CASE("cryptomatte::mask check arnold_one_crypto_sidecar_manif.exr")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
-TEST_CASE("cryptomatte::masks check arnold_one_crypto_sidecar_manif.exr")
-{
-    auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);
-    REQUIRE(cmattes.size() == 1);
-
-    SUBCASE("crypto_object")
-    {
-        auto& crypto_object = cmattes[0];
-        auto masks = crypto_object.masks();
-    }
-}
-
-
-// -----------------------------------------------------------------------------------
-// -----------------------------------------------------------------------------------
 TEST_CASE("cryptomatte::mask_compressed check arnold_one_crypto_sidecar_manif.exr")
 {
     auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);

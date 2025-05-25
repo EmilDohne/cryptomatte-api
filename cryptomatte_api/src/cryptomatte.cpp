@@ -3,9 +3,12 @@
 #include <cassert>
 #include <ranges>
 #include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "metadata.h"
 #include "detail/channel_util.h"
+#include "detail/detail.h"
 
 #include <compressed/image.h>
 #include <compressed/blosc2/lazyschunk.h>
@@ -453,15 +456,19 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	// -----------------------------------------------------------------------------------
 	std::unordered_map<std::string, compressed::channel<float32_t>> cryptomatte::masks_compressed() const
 	{
-		std::unordered_map<std::string, compressed::channel<float32_t>> out;
+		// Generate this as a float32_t and then remap later since the pixels store it as float32_t so we don't have
+		// to do this in the hot loop
+		std::unordered_map<float32_t, compressed::channel<float32_t>> out;
 		if (m_Metadata.manifest())
 		{
 			out.reserve(m_Metadata.manifest().value().size());
 		}
 
+		// Lambda for generating a new lazy channel on demand. This way we only
+		// create the channels when we encounter them.
 		const auto& first_channel = this->m_Channels.begin()->second;
 		const auto _width = this->width();
-		const auto _height = this->width();
+		const auto _height = this->height();
 		auto generate_lazy_channel = [&]()
 			{
 				// Generate a lazy channel that we will use to fill, using a lazy channel allows us to 
@@ -478,9 +485,105 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				);
 			};
 
-		// Use a vector that doesn't default initialize, as compressed::channel::get_chunk will internally use
-		// std::fill on the buffer.
-		compressed::util::default_init_vector<float32_t> chunk_buffer(first_channel.chunk_size());
+		// Iterate rank and coverage channels together
+		for (size_t i = 0; i + 1 < m_Channels.size(); i += 2)
+		{
+			const auto& rank_channel = m_Channels[i].second;
+			const auto& covr_channel = m_Channels[i + 1].second;
+
+			compressed::util::default_init_vector<float32_t> rank_chunk(rank_channel.chunk_size() / sizeof(float32_t));
+			compressed::util::default_init_vector<float32_t> covr_chunk(covr_channel.chunk_size() / sizeof(float32_t));
+
+			// Iterate the chunks, decompressing on the fly
+			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
+			{
+				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
+				rank_channel.get_chunk(std::span<float32_t>(rank_chunk.data(), chunk_num_elems), chunk_idx);
+				covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
+
+				// Get all the ids that are in the current rank chunk, this way we only decompress (allocate)
+				// the channels we need.
+				std::unordered_set<float32_t> ids_in_chunk;
+				std::mutex id_mutex;
+				std::for_each(std::execution::par_unseq, rank_chunk.begin(), rank_chunk.end(), [&](float32_t elem)
+					{
+						auto it = ids_in_chunk.find(elem);
+						if (it == ids_in_chunk.end()) [[unlikely]]
+						{
+							if (elem != static_cast<float32_t>(0))
+							{
+								std::lock_guard<std::mutex> lock(id_mutex);
+								ids_in_chunk.insert(elem);
+								if (!out.contains(elem))
+								{
+									out[elem] = generate_lazy_channel();
+								}
+							}
+						}
+					});
+
+				// Allocate a contiguous memory chunk and generate an index into it based off all the ids in the 
+				// current chunk. This allows us to fill the memory to zeros in parallel (which is usually faster)
+				// while also being a contiguous chunk for better data locality.
+				compressed::util::default_init_vector<float32_t> _mask_buffer(ids_in_chunk.size() * chunk_num_elems);
+				std::unordered_map<float32_t, std::span<float32_t>> mask_spans;
+
+				// First set up the spans correctly
+				size_t _count = 0;
+				for (auto id : ids_in_chunk)
+				{
+					size_t offset = _count * chunk_num_elems;
+					mask_spans[id] = std::span<float32_t>(_mask_buffer.data() + offset, chunk_num_elems);
+					++_count;
+				}
+				// Now fill them in parallel, note that this doesn't std::fill 0 into the vector but instead
+				// uses get_chunk in case any of the previous rank-coverage pairs already included this mask.
+				std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
+					{
+						auto key = pair.first;
+						out.at(key).get_chunk(pair.second, chunk_idx);
+					});
+
+				// Accumulate the output pixel from all of the coverage channels.
+				auto pixel_iota = std::views::iota(size_t{ 0 }, chunk_num_elems);
+				std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
+					{
+						// Skip any zero rank-channels, accumulate the rest, 
+						if (rank_chunk[idx] != static_cast<float32_t>(0))
+						{
+							auto& it = mask_spans.at(rank_chunk[idx]);
+							it[idx] += covr_chunk[idx];
+						}
+					});
+
+				// Set the data again, will recompress
+				std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
+					{
+						auto key = pair.first;
+						out.at(key).set_chunk(pair.second, chunk_idx);
+					});
+			}
+		}
+
+		// Now convert the floating point values into strings for the output mapping.
+		std::unordered_map<std::string, compressed::channel<float32_t>> out_as_str;
+		auto manif = m_Metadata.manifest().value_or(NAMESPACE_CRYPTOMATTE_API::manifest());
+		auto mapping = manif.mapping<float32_t>();
+		for (auto& [key, value] : out)
+		{
+			// Either use the hash as hex or get the name from the mapping.
+			std::string name = detail::uint32_t_to_hex_str(std::bit_cast<uint32_t>(key));
+			for (const auto [_name, hash] : mapping)
+			{
+				if (hash == key)
+				{
+					name = _name;
+				}
+			}
+			out_as_str[name] = std::move(value);
+		}
+
+		return out_as_str;
 	}
 
 	// -----------------------------------------------------------------------------------

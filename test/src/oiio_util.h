@@ -123,7 +123,7 @@ namespace test_util
         /// \param pixels The pixel vector, must be float
         /// \param width The width to write, pixels must be width * height
         /// \param height The width to write, pixels must be width * height
-        void write_exr(const std::string& filename, const std::vector<float>& pixels, int width, int height) 
+        inline void write_exr(const std::string& filename, const std::vector<float>& pixels, int width, int height) 
         {
             if (pixels.size() != static_cast<size_t>(width * height)) 
             {

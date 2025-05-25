@@ -3,6 +3,7 @@
 #include "macros.h"
 
 #include <string_view>
+#include <string>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {
@@ -21,6 +22,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// 
 		/// \returns the decoded uint32_t
 		uint32_t hex_str_to_uint32_t(const std::string_view hex);
+
+		std::string uint32_t_to_hex_str(uint32_t value);
 
 	} // detail
 
