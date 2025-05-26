@@ -35,3 +35,40 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 		/wd4702  # Disable C4702: unreachable code, seems to trigger in release builds from fmt lib.
 	)
 endif()
+
+# Profiling variant of the same target
+add_library(cryptomatte_api_profiling ${MY_SOURCES})
+target_include_directories(cryptomatte_api_profiling PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(cryptomatte_api_profiling PRIVATE "${PROJECT_SOURCE_DIR}/include/cryptomatte")
+target_link_libraries(cryptomatte_api_profiling PUBLIC
+	compressed_image 
+	spdlog::spdlog_header_only 
+	OpenImageIO::OpenImageIO
+)
+target_compile_definitions(cryptomatte_api_profiling PUBLIC _CRYPTOMATTE_PROFILE=1)
+
+# Apply same compile options to profiling variant
+if (MSVC)
+	target_compile_options(cryptomatte_api_profiling PRIVATE /utf-8 /MP /DNOMINMAX)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+	target_compile_options(
+		cryptomatte_api_profiling 
+		PRIVATE 
+		-Wall 
+		-Werror 
+		-Wextra
+	)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+	target_compile_options(
+		cryptomatte_api_profiling 
+		PRIVATE 
+		/W4 
+		/WX 
+		/w44062 
+		/w44464 
+		/w45264
+		/wd4702
+	)
+endif()

@@ -1,0 +1,19 @@
+file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "*.cpp")
+
+# Enable ctest
+enable_testing()
+add_executable(cryptomatte_api_benchmark ${MY_SOURCES})
+
+if(MSVC)
+    target_compile_options(cryptomatte_api_benchmark PRIVATE /MP /utf-8 /arch:AVX2)
+endif()
+target_link_libraries(cryptomatte_api_benchmark PRIVATE cryptomatte_api_profiling)
+target_link_libraries(cryptomatte_api_benchmark PRIVATE benchmark::benchmark)
+
+# Copy the images/ folder to the build dir to run the tests
+add_custom_command(TARGET cryptomatte_api_benchmark POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_CURRENT_SOURCE_DIR}/images/ $<TARGET_FILE_DIR:cryptomatte_api_benchmark>/images)
+add_custom_command(TARGET cryptomatte_api_benchmark POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E echo 
+                    "Finished copying test files to output directory $<TARGET_FILE_DIR:cryptomatte_api_benchmark>/images")

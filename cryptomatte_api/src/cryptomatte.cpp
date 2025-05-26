@@ -9,6 +9,7 @@
 #include "metadata.h"
 #include "detail/channel_util.h"
 #include "detail/detail.h"
+#include "detail/scoped_timer.h"
 
 #include <compressed/image.h>
 #include <compressed/blosc2/lazyschunk.h>
@@ -221,8 +222,20 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			all_channel_names.insert(all_channel_names.end(), channelnames.begin(), channelnames.end());
 		}
 
-		// Load all the channels in one go, we split these up later.
-		auto image = compressed::image<float32_t>::read(std::move(input_ptr), all_channel_names);
+		// Load all the channels in one go, we split these up later. Lower the chunk size so we don't over-allocate
+		// for small images.
+		const auto& spec = input_ptr->spec();
+		auto chunk_size = std::min(compressed::s_default_chunksize, static_cast<size_t>(spec.width) * spec.height * sizeof(float32_t));
+		auto block_size = std::min(chunk_size / 128, compressed::s_default_blocksize);
+		auto image = compressed::image<float32_t>::read(
+			std::move(input_ptr), 
+			all_channel_names, 
+			0, 
+			compressed::enums::codec::lz4, 
+			9, 
+			block_size, 
+			chunk_size
+		);
 
 		// Split up the cryptomattes and load them into their own instances.
 		size_t idx = 0;
@@ -456,6 +469,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	// -----------------------------------------------------------------------------------
 	std::unordered_map<std::string, compressed::channel<float32_t>> cryptomatte::masks_compressed() const
 	{
+		_CRYPTOMATTE_PROFILE_FUNCTION();
 		// Generate this as a float32_t and then remap later since the pixels store it as float32_t so we don't have
 		// to do this in the hot loop
 		std::unordered_map<float32_t, compressed::channel<float32_t>> out;
@@ -471,6 +485,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		const auto _height = this->height();
 		auto generate_lazy_channel = [&]()
 			{
+				_CRYPTOMATTE_PROFILE_FUNCTION();
 				// Generate a lazy channel that we will use to fill, using a lazy channel allows us to 
 				// not pay any memory allocation cost beyond a single chunk which will be reused. 
 				// Ensure we use the same parameters as our channels as the ctor taking compressed::channel instances
@@ -485,47 +500,85 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				);
 			};
 
+
+		// Allocate a contiguous memory chunk and generate an index into it based off all the ids in the 
+		// current chunk. This allows us to fill the memory to zeros in parallel (which is usually faster)
+		// while also being a contiguous chunk for better data locality.
+		compressed::util::default_init_vector<float32_t> _mask_buffer;
+
+		compressed::util::default_init_vector<float32_t> rank_chunk(first_channel.chunk_size() / sizeof(float32_t));
+		compressed::util::default_init_vector<float32_t> covr_chunk(first_channel.chunk_size() / sizeof(float32_t));
+
 		// Iterate rank and coverage channels together
 		for (size_t i = 0; i + 1 < m_Channels.size(); i += 2)
 		{
+			_CRYPTOMATTE_PROFILE_SCOPE("iter rank-coverage pairs");
 			const auto& rank_channel = m_Channels[i].second;
 			const auto& covr_channel = m_Channels[i + 1].second;
-
-			compressed::util::default_init_vector<float32_t> rank_chunk(rank_channel.chunk_size() / sizeof(float32_t));
-			compressed::util::default_init_vector<float32_t> covr_chunk(covr_channel.chunk_size() / sizeof(float32_t));
 
 			// Iterate the chunks, decompressing on the fly
 			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
 			{
-				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
-				rank_channel.get_chunk(std::span<float32_t>(rank_chunk.data(), chunk_num_elems), chunk_idx);
-				covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
+				_CRYPTOMATTE_PROFILE_SCOPE("iter chunks");
 
-				// Get all the ids that are in the current rank chunk, this way we only decompress (allocate)
-				// the channels we need.
-				std::unordered_set<float32_t> ids_in_chunk;
-				std::mutex id_mutex;
-				std::for_each(std::execution::par_unseq, rank_chunk.begin(), rank_chunk.end(), [&](float32_t elem)
-					{
-						auto it = ids_in_chunk.find(elem);
-						if (it == ids_in_chunk.end()) [[unlikely]]
+				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress rank-coverage chunks");
+					rank_channel.get_chunk(std::span<float32_t>(rank_chunk.data(), chunk_num_elems), chunk_idx);
+					covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
+				}
+
+				const size_t thread_count = std::thread::hardware_concurrency();
+				std::vector<std::unordered_set<float32_t>> thread_local_sets(thread_count);
+
+				// Divide the work into ranges per thread
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("get all ids from rank");
+					const size_t _chunk_size = rank_chunk.size();
+					const size_t _block_size = (_chunk_size + thread_count - 1) / thread_count;
+					auto thread_iota = std::views::iota(size_t{ 0 }, thread_count);
+					std::for_each(std::execution::par, thread_iota.begin(), thread_iota.end(), [&](size_t thread_idx)
 						{
-							if (elem != static_cast<float32_t>(0))
+							const size_t start = thread_idx * _block_size;
+							const size_t end = std::min(start + _block_size, _chunk_size);
+
+							auto& local_set = thread_local_sets[thread_idx];
+							for (size_t i = start; i < end; ++i)
 							{
-								std::lock_guard<std::mutex> lock(id_mutex);
-								ids_in_chunk.insert(elem);
-								if (!out.contains(elem))
+								float32_t elem = rank_chunk[i];
+								if (elem != static_cast<float32_t>(0))
 								{
-									out[elem] = generate_lazy_channel();
+									local_set.insert(elem);
 								}
 							}
-						}
-					});
+						});
+				}
 
-				// Allocate a contiguous memory chunk and generate an index into it based off all the ids in the 
-				// current chunk. This allows us to fill the memory to zeros in parallel (which is usually faster)
-				// while also being a contiguous chunk for better data locality.
-				compressed::util::default_init_vector<float32_t> _mask_buffer(ids_in_chunk.size() * chunk_num_elems);
+				// Now merge the local sets and populate output
+				std::unordered_set<float32_t> ids_in_chunk;
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("make unique ids and generate lazy_channel");
+					for (const auto& local_set : thread_local_sets)
+					{
+						ids_in_chunk.insert(local_set.begin(), local_set.end());
+					}
+					for (float32_t id : ids_in_chunk)
+					{
+						if (!out.contains(id))
+						{
+							out[id] = generate_lazy_channel();
+						}
+					}
+				}
+
+				// Resize the vector only if we need a larger size, avoids having to realloc this data every iteration.
+				auto _new_max_size = ids_in_chunk.size() * chunk_num_elems;
+				if (_mask_buffer.size() < _new_max_size)
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("realloc mask buffer");
+					_mask_buffer.resize(_new_max_size);
+				}
+				std::span<float32_t> _mask_buffer_span(_mask_buffer.data(), _new_max_size);
 				std::unordered_map<float32_t, std::span<float32_t>> mask_spans;
 
 				// First set up the spans correctly
@@ -533,54 +586,68 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				for (auto id : ids_in_chunk)
 				{
 					size_t offset = _count * chunk_num_elems;
-					mask_spans[id] = std::span<float32_t>(_mask_buffer.data() + offset, chunk_num_elems);
+					mask_spans[id] = std::span<float32_t>(_mask_buffer_span.data() + offset, chunk_num_elems);
 					++_count;
 				}
-				// Now fill them in parallel, note that this doesn't std::fill 0 into the vector but instead
-				// uses get_chunk in case any of the previous rank-coverage pairs already included this mask.
-				std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
-					{
-						auto key = pair.first;
-						out.at(key).get_chunk(pair.second, chunk_idx);
-					});
 
-				// Accumulate the output pixel from all of the coverage channels.
-				auto pixel_iota = std::views::iota(size_t{ 0 }, chunk_num_elems);
-				std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
-					{
-						// Skip any zero rank-channels, accumulate the rest, 
-						if (rank_chunk[idx] != static_cast<float32_t>(0))
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress mask chunks");
+					// Now fill them in parallel, note that this doesn't std::fill 0 into the vector but instead
+					// uses get_chunk in case any of the previous rank-coverage pairs already included this mask.
+					std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
 						{
-							auto& it = mask_spans.at(rank_chunk[idx]);
-							it[idx] += covr_chunk[idx];
-						}
-					});
+							auto key = pair.first;
+							out.at(key).get_chunk(pair.second, chunk_idx);
+						});
+				}
 
-				// Set the data again, will recompress
-				std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
-					{
-						auto key = pair.first;
-						out.at(key).set_chunk(pair.second, chunk_idx);
-					});
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("accumulate masks");
+					// Accumulate the output pixel from all of the coverage channels.
+					auto pixel_iota = std::views::iota(size_t{ 0 }, chunk_num_elems);
+					std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
+						{
+							// Skip any zero rank-channels, accumulate the rest, 
+							if (rank_chunk[idx] != static_cast<float32_t>(0))
+							{
+								auto& it = mask_spans.at(rank_chunk[idx]);
+								it[idx] += covr_chunk[idx];
+							}
+						});
+				}
+
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("recompress channel chunks");
+					// Set the data again, will recompress
+					std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
+						{
+							auto key = pair.first;
+							out.at(key).set_chunk(pair.second, chunk_idx);
+						});
+				}
 			}
 		}
 
 		// Now convert the floating point values into strings for the output mapping.
 		std::unordered_map<std::string, compressed::channel<float32_t>> out_as_str;
-		auto manif = m_Metadata.manifest().value_or(NAMESPACE_CRYPTOMATTE_API::manifest());
-		auto mapping = manif.mapping<float32_t>();
-		for (auto& [key, value] : out)
 		{
-			// Either use the hash as hex or get the name from the mapping.
-			std::string name = detail::uint32_t_to_hex_str(std::bit_cast<uint32_t>(key));
-			for (const auto [_name, hash] : mapping)
+			_CRYPTOMATTE_PROFILE_SCOPE("map by string");
+			auto manif = m_Metadata.manifest().value_or(NAMESPACE_CRYPTOMATTE_API::manifest());
+			auto mapping = manif.mapping<float32_t>();
+			for (auto& [key, value] : out)
 			{
-				if (hash == key)
+				// Either use the hash as hex or get the name from the mapping.
+				std::string name = detail::uint32_t_to_hex_str(std::bit_cast<uint32_t>(key));
+				for (const auto [_name, hash] : mapping)
 				{
-					name = _name;
+					if (hash == key)
+					{
+						name = _name;
+					}
 				}
+
+				out_as_str[name] = std::move(value);
 			}
-			out_as_str[name] = std::move(value);
 		}
 
 		return out_as_str;
