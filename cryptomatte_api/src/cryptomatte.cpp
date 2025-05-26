@@ -490,7 +490,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				// not pay any memory allocation cost beyond a single chunk which will be reused. 
 				// Ensure we use the same parameters as our channels as the ctor taking compressed::channel instances
 				// and thus have non-standard block and chunk sizes.
-				return compressed::channel<float32_t>::zeros(
+				auto channel = compressed::channel<float32_t>::zeros(
 					_width,
 					_height,
 					first_channel.compression(),
@@ -498,6 +498,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					first_channel.block_size(),
 					first_channel.chunk_size()
 				);
+				channel.update_nthreads(1, first_channel.block_size());
+				return channel;
 			};
 
 
@@ -516,6 +518,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			const auto& rank_channel = m_Channels[i].second;
 			const auto& covr_channel = m_Channels[i + 1].second;
 
+			std::unordered_set<float32_t> hashes_in_rank_channel;
+
 			// Iterate the chunks, decompressing on the fly
 			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
 			{
@@ -523,9 +527,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
 				{
-					_CRYPTOMATTE_PROFILE_SCOPE("decompress rank-coverage chunks");
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress rank chunk");
 					rank_channel.get_chunk(std::span<float32_t>(rank_chunk.data(), chunk_num_elems), chunk_idx);
-					covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
 				}
 
 				const size_t thread_count = std::thread::hardware_concurrency();
@@ -561,6 +564,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					for (const auto& local_set : thread_local_sets)
 					{
 						ids_in_chunk.insert(local_set.begin(), local_set.end());
+						hashes_in_rank_channel.insert(local_set.begin(), local_set.end());
 					}
 					for (float32_t id : ids_in_chunk)
 					{
@@ -571,12 +575,25 @@ namespace NAMESPACE_CRYPTOMATTE_API
 					}
 				}
 
+				// No ids in chunk -> skip
+				if (ids_in_chunk.empty())
+				{
+					continue;
+				}
+
+				// Only now decompress the coverage channel, once we know there's data to get.
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress coverage chunk");
+					covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
+				}
+
 				// Resize the vector only if we need a larger size, avoids having to realloc this data every iteration.
 				auto _new_max_size = ids_in_chunk.size() * chunk_num_elems;
-				if (_mask_buffer.size() < _new_max_size)
+				if (_mask_buffer.size() < _new_max_size) 
 				{
 					_CRYPTOMATTE_PROFILE_SCOPE("realloc mask buffer");
-					_mask_buffer.resize(_new_max_size);
+					size_t new_capacity = std::max(_mask_buffer.capacity() * 2, _new_max_size);
+					_mask_buffer.resize(new_capacity);
 				}
 				std::span<float32_t> _mask_buffer_span(_mask_buffer.data(), _new_max_size);
 				std::unordered_map<float32_t, std::span<float32_t>> mask_spans;
@@ -617,7 +634,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				}
 
 				{
-					_CRYPTOMATTE_PROFILE_SCOPE("recompress channel chunks");
+					_CRYPTOMATTE_PROFILE_SCOPE("recompress mask chunks");
 					// Set the data again, will recompress
 					std::for_each(std::execution::par_unseq, mask_spans.begin(), mask_spans.end(), [&](auto pair)
 						{
@@ -625,6 +642,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 							out.at(key).set_chunk(pair.second, chunk_idx);
 						});
 				}
+			}
+		
+			// Once we have zero hashes in the whole rank channel, we can be pretty confident 
+			// that there will be no more hashes in subsequent rank-coverage pairs due to the 
+			// cascading nature of hashes, therefore we can safely exit out of the loop saving
+			// us iteration and decompression/compression costs.
+			if (hashes_in_rank_channel.empty())
+			{
+				break;
 			}
 		}
 

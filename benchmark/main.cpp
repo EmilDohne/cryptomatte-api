@@ -94,27 +94,27 @@ void bench_cryptomatte_masks_compressed(benchmark::State& state, const std::file
 				benchmark::ClobberMemory();
 			});
 
-		//for (const auto& [name, mask] : all_masks)
-		//{
-		//	auto base_path = image_path.parent_path();
+		for (const auto& [name, mask] : all_masks)
+		{
+			auto base_path = image_path.parent_path();
 
-		//	std::string safe_name = name;
-		//	std::replace(safe_name.begin(), safe_name.end(), '/', '_');
-		//	std::replace(safe_name.begin(), safe_name.end(), '\\', '_');
-		//	std::replace(safe_name.begin(), safe_name.end(), '\n', '_');
-		//	std::replace(safe_name.begin(), safe_name.end(), ':', '_');
+			std::string safe_name = name;
+			std::replace(safe_name.begin(), safe_name.end(), '/', '_');
+			std::replace(safe_name.begin(), safe_name.end(), '\\', '_');
+			std::replace(safe_name.begin(), safe_name.end(), '\n', '_');
+			std::replace(safe_name.begin(), safe_name.end(), ':', '_');
 
-		//	// clear the extension temporarily
-		//	auto base_name = image_path.filename().replace_extension("");
-		//	std::filesystem::create_directory(base_path / base_name);
-		//	base_name = std::format("{}/{}.exr", base_name.string(), safe_name);
-		//	auto out_path = base_path / base_name;
-		//	auto out_path_str = out_path.string();
+			// clear the extension temporarily
+			auto base_name = image_path.filename().replace_extension("");
+			std::filesystem::create_directory(base_path / base_name);
+			base_name = std::format("{}/{}.exr", base_name.string(), safe_name);
+			auto out_path = base_path / base_name;
+			auto out_path_str = out_path.string();
 
-		//	auto pixels = mask.get_decompressed();
+			auto pixels = mask.get_decompressed();
 
-		//	write_exr(out_path_str, pixels, mask.width(), mask.height());
-		//}
+			write_exr(out_path_str, pixels, mask.width(), mask.height());
+		}
 	}
 }
 
