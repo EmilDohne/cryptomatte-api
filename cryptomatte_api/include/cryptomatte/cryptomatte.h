@@ -18,63 +18,23 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	using namespace std::string_view_literals;
 
 	/// \brief A cryptomatte file loaded from disk or memory storing the channels as compressed buffer
-	/// 
-	/// This is the main entry point for loading and interacting with cryptomatte files and their associated data.
-	/// It fully supports loading any number of cryptomattes from a given file and performs validation on the metadata,
-	/// channels and masks to ensure correctness.
-	/// 
-	/// Cryptomattes are a special image type that stores ID masks with support for transparency. To do this it stores
-	/// alternating `rank` and `coverage` channels where the `rank` channel is the ID of the pixel and the `coverage` 
-	/// channel is an additive value describing how much of that mask is stored in this rank-coverage pair.
-	/// 
-	/// This is to allow for transparent pixels by storing only one mask per pixel per rank-coverage pair and then storing
-	/// further ids that lie on the same pixel in another rank-coverage pair. The cryptomatte channels are stored
-	/// as follows:
-	/// 
-	/// {typename}.r    - deprecated -> may be skipped
-	/// {typename}.g    - deprecated (may contain filtered preview colors) -> may be skipped
-	/// {typename}.b    - deprecated (may contain filtered preview colors) -> may be skipped
-	/// {typename}00.r  - id rank channel 0
-	/// {typename}00.g  - coverage channel 0
-	/// {typename}00.b  - id rank channel 1
-	/// {typename}00.a  - coverage channel 1
-	/// {typename}01.r  - id rank channel 2
-	/// {typename}01.g  - coverage channel 2
-	/// {typename}01.b  - id rank channel 3
-	/// {typename}01.a  - coverage channel 3
-	/// ...
-	/// 
-	/// Here typename can be anything, but usually it will be something along the lines of `Cryptomatte`, `CryptoAsset`,
-	/// `CryptoMaterial` etc. Due to this cascading rank system you will typically find most data on the first rank-coverage
-	/// pairs with the further pairs being used to resolve intersections on transparent pixels with diminishing returns. 
-	/// 
-	/// In DCCs you will often find a setting allowing you to control the numer of `levels`, this is the number of
-	/// rank-coverage pairs and dictates how many objects may overlap on a single pixel.
-	/// 
-	/// The `cryptomatte::file` struct loads the above mentioned channels and performs mask computation on the fly. 
-	/// It allows you to either target a specific mask, multiple masks or all masks using the `mask`, `masks` or 
-	/// `mask_compressed` and `masks_compressed` functions (more on those later). This has the benefit of only loading
-	/// the masks you need into memory, skipping over the rest. 
-	/// 
-	/// As a rule of thumb however, you should always try to extract as many masks in one go as you need, as for each
-	/// mask query we need to iterate all of the above channels.
-	/// 
-	/// **Compression**
-	/// 
-	/// This Cryptomatte implementation uses in-memory compression for the channels, and optionally also compresses the
-	/// masks as they are being extracted. This is primarily to greatly reduce memory usage as masks typically compress
-	/// quite well, but also for performance reasons (less allocations -> greater speed). For specifics please check out
-	/// the benchmarking section in the documentation.
 	struct cryptomatte
 	{
+
+		/// \{
+		/// \name default ctors, copy ctors etc.
 
 		cryptomatte() = default;
 		cryptomatte(cryptomatte&&) = default;
 		cryptomatte& operator=(cryptomatte&&) = default;
-		// delete copy ctor and copy assignment operator as compressed::channel is not copyable.
+		/// delete copy ctor and copy assignment operator as compressed::channel is not copyable.
 		cryptomatte(const cryptomatte&) = delete;
 		cryptomatte& operator=(const cryptomatte&) = delete;
 
+		/// \}
+
+		/// \{
+		/// \name create cryptomattes
 
 		/// \brief Construct a cryptomatte from a set of input channels and associated metadata.
 		/// 
@@ -130,6 +90,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \returns The detected and loaded cryptomattes, there may be multiple or none per-file.
 		static std::vector<cryptomatte> load(std::filesystem::path file, bool load_preview);
 
+		/// \}
 
 		size_t width() const;
 

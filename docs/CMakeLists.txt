@@ -5,9 +5,10 @@ find_package(Sphinx REQUIRED)
 
 # Find all the public headers
 # --------------------------------------------------------------------------
-get_target_property(CRYPTOMATTE_API_PUBLIC_HEADERS cryptomatte_api INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(CRYPTOMATTE_API_PUBLIC_HEADER_DIR cryptomatte_api INTERFACE_INCLUDE_DIRECTORIES)
+file(GLOB_RECURSE CRYPTOMATTE_API_PUBLIC_HEADERS ${CRYPTOMATTE_API_PUBLIC_HEADER_DIR}/*.h)
 
-set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/src/cryptomatte)
+set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/cryptomatte_api)
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs)
 set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)

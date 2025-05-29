@@ -23,6 +23,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 	struct metadata
 	{
 
+		/// \{
+		/// \name creating the metadata struct
+
 		metadata() = default;
 
 		/// Construct a cryptomattes' metadata from the given parameters extracted from the images' metadata.
@@ -98,23 +101,25 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \returns a vector of metadata definitions, there is no limit to how many there may be in a single file.
 		static std::vector<metadata> from_json(const json_ordered& json, std::filesystem::path image_path);
 
+		/// \}
+
 		/// Retrieve all the cryptomatte channel names for the given list of channelnames in the order they came in.
-		/// Filters all of them according to `is_valid` and returns all the channel names matching this.
+		/// Filters all of them according to `is_valid_channel_name` and returns all the channel names matching this.
 		std::vector<std::string> channel_names(const std::vector<std::string>& channelnames) const;
 
 		/// Retrieve all the legacy cryptomatte channel names for the given list of channelnames in the order they came in.
-		/// Filters all of them according to `is_valid_legacy` and returns all the channel names matching this.
+		/// Filters all of them according to `is_valid_legacy_channel_name` and returns all the channel names matching this.
 		std::vector<std::string> legacy_channel_names(const std::vector<std::string>& channelnames) const;
 
 		/// Check whether the passed channel name is a channel name of this metadata (excluding legacy channels).
 		/// Channel names must follow the following convention
 		/// 
-		/// {typename}00.r
-		/// {typename}00.g
-		/// {typename}00.b
-		/// {typename}00.a
-		/// {typename}01.r
-		/// ...
+		///		{typename}00.r
+		///		{typename}00.g
+		///		{typename}00.b
+		///		{typename}00.a
+		///		{typename}01.r
+		///		...
 		/// 
 		/// where typename is `name` 
 		/// 
@@ -125,9 +130,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// Check whether the passed channel name is a legacy channel name of this metadata.
 		/// Legacy channels in cryptomattes are one of the following:
 		/// 
-		/// {typename}.r
-		/// {typename}.g
-		/// {typename}.b
+		///		{typename}.r
+		///		{typename}.g
+		///		{typename}.b
 		/// 
 		/// where typename is `name` 
 		/// 
@@ -135,10 +140,10 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \returns Whether the passed `channel_name` is a legacy channel name.
 		bool is_valid_legacy_channel_name(std::string channel_name) const;
 
-		/// Retrieve the name, also referred to as 'typename' of the cryptomatte.
+		/// Retrieve the name, also referred to as `typename` of the cryptomatte.
 		///
 		/// This determines the name the cryptomatte channels will have. For example, for the first rank channel
-		/// the name of the channel would be '{typename}00.r'
+		/// the name of the channel would be `{typename}00.r`
 		std::string name() const;
 
 		/// Retrieve the key of the cryptomatte, this uniquely identifies the cryptomatte within the metadata.
@@ -158,15 +163,21 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// upon for decoding the cryptomatte masks.
 		std::optional<NAMESPACE_CRYPTOMATTE_API::manifest> manifest() const;
 
+		/// \{
+		/// \name attribute name constants
+		/// 
 		/// Constants for the identifiers of these attributes within the metadata.
 		/// Cryptomattes store their metadata in the following format cryptomatte/<key>/<attribute>.
 		/// These functions give you all the valid names for these attributes. These are 'name',
 		/// 'hash', 'conversion', 'manifest' and 'manif_file'.
+
 		static std::string attrib_name_identifier();
 		static std::string attrib_hash_method_identifier();
 		static std::string attrib_conversion_method_identifier();
 		static std::string attrib_manifest_identifier();
 		static std::string attrib_manif_file_identifier();
+
+		/// \}
 
 	private:
 		/// The name of the cryptomatte type, for example, 'CryptoAsset'. This will be propagate to the channel names

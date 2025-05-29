@@ -1,23 +1,73 @@
 cryptomatte-api
 ########################################
 
+.. image:: images/test_image.png
+
 About
 =========
 
-Why should you care?
-====================
+The ``cryptomatte-api`` is a fast, memory-efficient and robust library for loading, validating 
+and decoding cryptomattes. It is meant to serve as a de-facto standard implementation of cryptomatte
+loading that is DCC-agnostic and runs as a standalone.
 
+It is written entirely using C++20 while also providing pre-built python binaries that are pip-installable.
 
 Features
 =========
 
+- Robust and accurate decoding of cryptomattes (v1.2.0 spec)
+- Fully compliant with the specification
+- Extremely fast even at high resolutions
+- Very memory efficient
+- Rigorously tested
 
 Performance
 ===========
 
+The ``cryptomatte-api`` allows you to decode hundreds of cryptomattes for billions of pixels in 
+less than a second. It is fast and efficient for both small and large images. During our :ref:`cmatte_benchmarks`
+we test from just 320x140 pixels to 14480x8370 pixels for over 200 masks per-image.
+
+We allow you to decode using in-memory compression or directly into a flat buffer giving you the 
+flexibility to choose depending on your performance and memory needs.
+
+.. image:: images/bench_time/compressed/more_samples_log-linear.png
+	:alt: A graph showing the relationship of pixels to the decoding time of all the masks
+		  ranging from 45ms to 1898ms following a slightly exponential growth curve.
+
+.. image:: images/bench_mem_usage/compressed/more_samples_log-log.png
+	:alt: A graph showing the relationship of pixels to the memory usage of all the masks
+		  comparing the uncompressed data size to compressed. The memory usage for the masks
+		  peaks out at around 2.6GB towards the middle of the graph following a gaussian 
+		  curve.
+
 
 Quickstart
 ==========
+
+This is a simple example of getting you up and running with the cryptomatte-api, loading a file from 
+disk (which validates it) and then extract one or more masks from the image.
+
+.. tab:: c++
+
+    .. code-block:: cpp
+
+        #include <cryptomatte/cryptomatte.h>
+
+        auto matte = cmatte::cryptomatte::load("from/disk/path", false /* load preview channels */);
+        auto mask = matte.mask("my_mask"); // will throw if 'my_mask' is not available
+        auto all_masks = matte.masks_compressed(); // get all the masks as compressed channels.
+
+.. tab:: python
+
+    .. code-block:: python
+            
+        import cryptomatte_api as cmatte
+
+        matte = cmatte.Cryptomatte.load("from/disk/path", load_preview=False)
+        mask = matte.mask("my_mask") // will raise if 'my_mask' is not available
+        all_masks = matte.masks_compressed() // get all the masks as compressed channels.
+
 
 Contents
 ========
@@ -25,6 +75,9 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   introduction.rst
+   code-ref/main.rst
+   benchmarks.rst
   
 
 :ref:`genindex`

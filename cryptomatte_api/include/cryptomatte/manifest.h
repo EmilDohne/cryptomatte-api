@@ -19,8 +19,15 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	struct manifest
 	{
+		/// \{
+		/// \name creating a manifest
 
 		manifest() = default;
+
+		/// Load and decode a manifest from a json (this would be the cryptomatte/<hash>/manifest or 
+		/// cryptomatte/<hash>/manif_file).
+		/// 
+		/// \param json The json to load from.
 		explicit manifest(json_ordered json);
 
 		/// Load and decode a manifest from a json string (this would be the cryptomatte/<hash>/manifest or 
@@ -46,6 +53,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \return A decoded manifest if present and successfully parsed; otherwise, std::nullopt.
 		static std::optional<manifest> load(std::string manif_key, std::string manif_value, std::filesystem::path image_path) noexcept;
 
+		/// \}
+
+
 		/// Check whether the manifest contains the passed name.
 		/// 
 		/// \param name The name to check for existence within the manifest.
@@ -53,11 +63,14 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \return True if the name exists in the manifest, false otherwise.
 		bool contains(std::string_view name);
 
+		/// \{
+		/// \name retrieving the mapping
+
 		/// Retrieve the full name-to-hash mapping, cast to the specified type.
 		/// 
-		/// This function provides access to the internal name-hash mapping in the desired format:
+		/// This function provides access to the name-hash mapping in the desired format:
 		/// - `uint32_t`: The raw internal representation (default).
-		/// - `float32_t`: A bit-cast form of the hash, used for Cryptomatte rendering IDs.
+		/// - `float32_t`: A bit-cast form of the hash, this is what the hashes are stored as in-file.
 		/// - `std::string`: A hexadecimal string representation of the hash.
 		///
 		/// \tparam T The type to return the hash values as, defaulting to `uint32_t`. Must be one of:
@@ -139,6 +152,9 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			);
 		}
 
+		/// @}
+
+		/// \brief Get the size of the manifest, i.e. how many items are in the mapping.
 		size_t size() const noexcept;
 
 	private:
