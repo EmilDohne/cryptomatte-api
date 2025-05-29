@@ -15,6 +15,7 @@ if (MAIN_PROJECT)
     set(CRYPTOMATTE_API_BUILD_TESTS ON)
     set(CRYPTOMATTE_API_BUILD_DOCS ON)
     set(CRYPTOMATTE_API_BUILD_BENCHMARKS ON)
+    set(CRYPTOMATTE_API_BUILD_PYTHON ON)
 endif()
 
 
@@ -24,6 +25,7 @@ option(CRYPTOMATTE_API_BUILD_TESTS OFF)
 option(CRYPTOMATTE_API_BUILD_EXAMPLES OFF)
 option(CRYPTOMATTE_API_BUILD_DOCS OFF)
 option(CRYPTOMATTE_API_BUILD_BENCHMARKS OFF)
+option(CRYPTOMATTE_API_BUILD_PYTHON OFF)
 
 if (CRYPTOMATTE_API_IMAGE_USE_VCPKG)
     include("${PROJECT_SOURCE_DIR}/thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake")
@@ -65,3 +67,10 @@ endif()
 if (CRYPTOMATTE_API_BUILD_DOCS)
     add_subdirectory(docs)
 endif()
+
+
+if (CRYPTOMATTE_API_BUILD_PYTHON)
+    add_subdirectory(thirdparty/pybind11)
+    add_subdirectory(python)
+endif()
+
