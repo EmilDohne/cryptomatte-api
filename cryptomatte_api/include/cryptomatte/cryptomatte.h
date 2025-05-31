@@ -201,7 +201,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \param names The names to extract, could e.g. be {'bunny1', 'car', ...}
 		/// 
 		/// \returns The decoded cryptomattes mapped by their name
-		std::unordered_map<std::string, std::vector<float32_t>> masks(std::vector<std::string> names);
+		std::unordered_map<std::string, std::vector<float32_t>> masks(std::vector<std::string> names) const;
 
 		/// \brief Extract the masks with the given names from the cryptomatte, computing on the fly.
 		/// 
@@ -216,20 +216,13 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// 
 		/// \returns The decoded cryptomattes mapped by their name (if the manifest exists) or by their hashes in std::string
 		///			 form.
-		std::unordered_map<std::string, std::vector<float32_t>> masks(std::vector<uint32_t> hashes);
+		std::unordered_map<std::string, std::vector<float32_t>> masks(std::vector<uint32_t> hashes) const;
 
 		/// \brief Extract all of the cryptomatte masks computing them on the fly
 		/// 
-		/// \param use_manifest Whether to use the manifest to preallocate the correct number of items before the hot loop.
-		///						This allows for quite some optimizations so whenever possible this should be turned on.
-		///						It may however throw a std::out_of_range if the manifest is faulty or incomplete.
-		///						Therefore, often it is desirable to wrap this call in a try; catch falling back to the
-		///						potentially slower, non-manifest based decoding. If no cryptomatte manifest exists,
-		///						and this is true this function will run as if `use_manifest` was off.
-		/// 
 		/// \returns The decoded cryptomattes mapped by their name (if the manifest exists) or by their hashes in std::string
 		///			 form.
-		std::unordered_map<std::string, std::vector<float32_t>> masks(bool use_manifest) const;
+		std::unordered_map<std::string, std::vector<float32_t>> masks() const;
 
 		/// \brief Extract the masks with the given names from the cryptomatte into compressed buffers, computing on the fly.
 		/// 
@@ -243,7 +236,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \param names The names to extract, could e.g. be {'bunny1', 'car', ...}
 		/// 
 		/// \returns The decoded cryptomattes mapped by their name
-		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed(std::vector<std::string> names);
+		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed(std::vector<std::string> names) const;
 
 		/// \brief Extract the masks with the given hashes from the cryptomatte into compressed buffers, computing on the fly.
 		/// 
@@ -258,7 +251,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// 
 		/// \returns The decoded cryptomattes mapped by their name (if the manifest exists) or by their hashes in std::string
 		///			 form.
-		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed(std::vector<uint32_t> hashes);
+		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed(std::vector<uint32_t> hashes) const;
 
 		/// \brief Extract all of the cryptomatte masks into compressed buffers, computing them on the fly
 		/// 
@@ -266,7 +259,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		///			 form.
 		std::unordered_map<std::string, compressed::channel<float32_t>> masks_compressed() const;
 
-		/// Retrieve the number of levels (rank-coverage pairs) the cryptomatte was encoded with.
+		/// Retrieve the number of levels (rank-coverage pairs) the cryptomatte was encoded with. This may not be the level
+		/// The cryptomatte was rendered with as sometimes DCCs will pad this number to the nearest multiple of two.
 		size_t num_levels() const noexcept;
 
 		/// Get the metadata associated with the cryptomatte file, this includes things such as the channel names,

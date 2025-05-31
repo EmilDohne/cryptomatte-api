@@ -28,7 +28,21 @@ void bind_metadata(py::module& m)
 			py::arg("manifest") = std::nullopt)
 
 		// Static methods
-		.def_static("from_spec", &metadata::from_spec, py::arg("spec"), py::arg("image_path"))
+		.def_static("from_filepath", [](std::filesystem::path filepath)
+			{
+				auto input_ptr = OIIO::ImageInput::open(filepath);
+				if (!input_ptr)
+				{
+					throw std::runtime_error(
+						std::format(
+							"Failed to open file {}.", filepath
+						)
+					);
+				}
+
+				auto& spec = input_ptr->spec();
+				return metadata::from_spec(spec);
+			}, py::arg("filepath"))
 		.def_static("from_json", &metadata::from_json, py::arg("json"), py::arg("image_path"))
 
 		// Instance methods

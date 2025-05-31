@@ -15,10 +15,12 @@ void bind_manifest(py::module& m)
 	py::class_<manifest>(m, "Manifest")
 		.def(py::init<>())
 
-		// Expose a constructor that takes regular json and converts it
-		.def_static("from_json", [](const nlohmann::json& json_obj) {
-		json_ordered ordered = json_obj;
-		return manifest(ordered);
+		// Expose a constructor that takes regular json and converts it since pybind11_json does not expose ordered
+		// json but only json. 
+		.def_static("from_json", [](const nlohmann::json& json_obj) 
+			{
+				json_ordered ordered = json_obj;
+				return manifest(ordered);
 			})
 
 		// Same for hash accessors and mapping
@@ -32,7 +34,4 @@ void bind_manifest(py::module& m)
 		.def("mapping_uint32", &manifest::mapping<uint32_t>)
 		.def("mapping_float", &manifest::mapping<float32_t>)
 		.def("mapping_hex", &manifest::mapping<std::string>)
-
-		// Optional: Expose the .from_str method
-		.def_static("from_str", &manifest::from_str);
 }
