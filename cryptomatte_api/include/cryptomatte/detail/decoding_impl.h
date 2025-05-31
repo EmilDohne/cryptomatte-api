@@ -5,7 +5,8 @@
 #include <span>
 
 #include "macros.h"
-#include "scoped_timer.h
+#include "detail.h"
+#include "scoped_timer.h"
 #include "cryptomatte/manifest.h"
 
 #include <compressed/util.h>
@@ -83,10 +84,10 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			{
 				_CRYPTOMATTE_PROFILE_SCOPE("map by string");
 				auto mapping = manif.mapping<float32_t>();
-				for (auto& [key, value] : out)
+				for (auto& [key, value] : in)
 				{
 					// Either use the hash as hex or get the name from the mapping.
-					std::string name = detail::uint32_t_to_hex_str(std::bit_cast<uint32_t>(key));
+					std::string name = uint32_t_to_hex_str(std::bit_cast<uint32_t>(key));
 					for (const auto [_name, hash] : mapping)
 					{
 						if (hash == key)

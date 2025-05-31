@@ -465,6 +465,28 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		return out;
 	}
 
+
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
+	std::unordered_map<std::string, std::vector<float32_t>> cryptomatte::masks(std::vector<std::string> names) const
+	{
+		if (!m_Metadata.manifest().has_value())
+		{
+			throw std::invalid_argument(
+				"Unable to extract the masks by their names if there is no manifest present on the cryptomatte."
+			);
+		}
+
+		auto manif = m_Metadata.manifest().value();
+		std::vector<uint32_t> hashes;
+		for (const auto& name : names)
+		{
+			// This will throw std::invalid_argument on failure to find the name.
+			hashes.push_back(manif.hash(name));
+		}
+		return masks(std::move(hashes));
+	}
+
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
 	std::unordered_map<std::string, std::vector<float32_t>> cryptomatte::masks(std::vector<uint32_t> hashes) const
@@ -472,8 +494,21 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		// Set up the output map mapped by float32_t at first since that is the storage type, we remap later outside
 		// of the hot loop.
 		std::unordered_map<float32_t, std::vector<float32_t>> out;
-
+		std::unordered_set<float32_t> requested_hashes;
 		const auto& first_channel = this->m_Channels.begin()->second;
+		const auto _first_chunk_num_elems = first_channel.chunk_size() / sizeof(float32_t);
+		const auto _width = this->width();
+		const auto _height = this->height();
+		for (const auto& hash : hashes)
+		{
+			requested_hashes.insert(std::bit_cast<float32_t>(hash));
+			out[std::bit_cast<float32_t>(hash)] = {};
+		}
+		std::for_each(std::execution::par_unseq, out.begin(), out.end(), [&](auto& pair)
+			{
+				pair.second = std::vector<float32_t>(_width * _height);
+			});
+
 		compressed::util::default_init_vector<float32_t> rank_chunk(first_channel.chunk_size() / sizeof(float32_t));
 		compressed::util::default_init_vector<float32_t> covr_chunk(first_channel.chunk_size() / sizeof(float32_t));
 
@@ -489,6 +524,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			// Iterate the chunks, decompressing on the fly
 			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
 			{
+				_CRYPTOMATTE_PROFILE_SCOPE("iter chunks");
+
 				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
 				{
 					_CRYPTOMATTE_PROFILE_SCOPE("decompress rank chunk");
@@ -496,19 +533,179 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				}
 
 				const size_t thread_count = std::thread::hardware_concurrency();
-				auto ids_in_chunk = detail::accumulate_ids_in_rank_chunk(std::span<float32_t>(rank_chunk), thread_count);
+				auto _ids_in_chunk = detail::accumulate_ids_in_rank_chunk(std::span<float32_t>(rank_chunk), thread_count);
+				hashes_in_rank_channel.insert(_ids_in_chunk.begin(), _ids_in_chunk.end());
+
+				// Since we only care about the hashes we were asked about, we take the intersection of the ids requested
+				// and the ids in the chunk.
+				std::unordered_set<float32_t> ids_in_chunk_isection;
+				for (const auto& id : _ids_in_chunk) 
+				{
+					if (requested_hashes.count(id)) 
+					{
+						ids_in_chunk_isection.insert(id);
+					}
+				}
+
+
+				// No ids in chunk -> skip
+				if (ids_in_chunk_isection.empty())
+				{
+					continue;
+				}
+
+				// Only now decompress the coverage channel, once we know there's data to get.
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress coverage chunk");
+					covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
+				}
+
+				// First set up the spans correctly
+				std::unordered_map<float32_t, std::span<float32_t>> mask_spans;
+				for (auto id : ids_in_chunk_isection)
+				{
+					size_t base_offset = chunk_idx * _first_chunk_num_elems;
+					mask_spans[id] = std::span<float32_t>(out.at(id).data() + base_offset, chunk_num_elems);
+				}
+
+
+				// Accumulate the output pixel from all of the coverage channels.
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("accumulate masks");
+					auto pixel_iota = std::views::iota(size_t{ 0 }, chunk_num_elems);
+					std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
+						{
+							// Skip any zero rank-channels, accumulate the rest, 
+							if (rank_chunk[idx] != static_cast<float32_t>(0))
+							{
+								if (ids_in_chunk_isection.contains(rank_chunk[idx]))
+								{
+									auto& it = mask_spans.at(rank_chunk[idx]);
+									it[idx] += covr_chunk[idx];
+								}
+							}
+						});
+				}
+
+				// Once we have zero hashes in the whole rank channel, we can be pretty confident 
+				// that there will be no more hashes in subsequent rank-coverage pairs due to the 
+				// cascading nature of hashes, therefore we can safely exit out of the loop saving
+				// us iteration and decompression/compression costs.
+				if (hashes_in_rank_channel.empty())
+				{
+					break;
+				}
 			}
 		}
-	}
 
+		// Now convert the floating point values into strings for the output mapping.
+		return detail::map_to_string(
+			std::move(out),
+			m_Metadata.manifest().value_or(NAMESPACE_CRYPTOMATTE_API::manifest())
+		);
+	}
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
 	std::unordered_map<std::string, std::vector<float32_t>> cryptomatte::masks() const
 	{
+		// Set up the output map mapped by float32_t at first since that is the storage type, we remap later outside
+		// of the hot loop.
+		std::unordered_map<float32_t, std::vector<float32_t>> out;
+		const auto& first_channel = this->m_Channels.begin()->second;
+		const auto _first_chunk_num_elems = first_channel.chunk_size() / sizeof(float32_t);
+		const auto _width = this->width();
+		const auto _height = this->height();
 
+		compressed::util::default_init_vector<float32_t> rank_chunk(first_channel.chunk_size() / sizeof(float32_t));
+		compressed::util::default_init_vector<float32_t> covr_chunk(first_channel.chunk_size() / sizeof(float32_t));
+
+		// Iterate rank and coverage channels together
+		for (size_t i = 0; i + 1 < m_Channels.size(); i += 2)
+		{
+			_CRYPTOMATTE_PROFILE_SCOPE("iter rank-coverage pairs");
+			const auto& rank_channel = m_Channels[i].second;
+			const auto& covr_channel = m_Channels[i + 1].second;
+
+			std::unordered_set<float32_t> hashes_in_rank_channel;
+
+			// Iterate the chunks, decompressing on the fly
+			for (size_t chunk_idx : std::views::iota(size_t{ 0 }, rank_channel.num_chunks()))
+			{
+				_CRYPTOMATTE_PROFILE_SCOPE("iter chunks");
+
+				size_t chunk_num_elems = rank_channel.chunk_size(chunk_idx) / sizeof(float32_t);
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress rank chunk");
+					rank_channel.get_chunk(std::span<float32_t>(rank_chunk.data(), chunk_num_elems), chunk_idx);
+				}
+
+				const size_t thread_count = std::thread::hardware_concurrency();
+				auto _ids_in_chunk = detail::accumulate_ids_in_rank_chunk(std::span<float32_t>(rank_chunk), thread_count);
+				hashes_in_rank_channel.insert(_ids_in_chunk.begin(), _ids_in_chunk.end());
+
+				// No ids in chunk -> skip
+				if (_ids_in_chunk.empty())
+				{
+					continue;
+				}
+
+				// Allocate all the memory for any masks that are not yet initialized.
+				for (const auto& hash : _ids_in_chunk)
+				{
+					if (!out.contains(hash))
+					{
+						out[std::bit_cast<float32_t>(hash)] = std::vector<float32_t>(_width * _height);
+					}
+				}
+
+				// Only now decompress the coverage channel, once we know there's data to get.
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("decompress coverage chunk");
+					covr_channel.get_chunk(std::span<float32_t>(covr_chunk.data(), chunk_num_elems), chunk_idx);
+				}
+
+				// First set up the spans correctly
+				std::unordered_map<float32_t, std::span<float32_t>> mask_spans;
+				for (auto id : _ids_in_chunk)
+				{
+					size_t base_offset = chunk_idx * _first_chunk_num_elems;
+					mask_spans[id] = std::span<float32_t>(out.at(id).data() + base_offset, chunk_num_elems);
+				}
+
+
+				// Accumulate the output pixel from all of the coverage channels.
+				{
+					_CRYPTOMATTE_PROFILE_SCOPE("accumulate masks");
+					auto pixel_iota = std::views::iota(size_t{ 0 }, chunk_num_elems);
+					std::for_each(std::execution::par_unseq, pixel_iota.begin(), pixel_iota.end(), [&](size_t idx)
+						{
+							// Skip any zero rank-channels, accumulate the rest, 
+							if (rank_chunk[idx] != static_cast<float32_t>(0))
+							{
+								auto& it = mask_spans.at(rank_chunk[idx]);
+								it[idx] += covr_chunk[idx];
+							}
+						});
+				}
+
+				// Once we have zero hashes in the whole rank channel, we can be pretty confident 
+				// that there will be no more hashes in subsequent rank-coverage pairs due to the 
+				// cascading nature of hashes, therefore we can safely exit out of the loop saving
+				// us iteration and decompression/compression costs.
+				if (hashes_in_rank_channel.empty())
+				{
+					break;
+				}
+			}
+		}
+
+		// Now convert the floating point values into strings for the output mapping.
+		return detail::map_to_string(
+			std::move(out),
+			m_Metadata.manifest().value_or(NAMESPACE_CRYPTOMATTE_API::manifest())
+		);
 	}
-
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
@@ -598,11 +795,13 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				// Since we only care about the hashes we were asked about, we take the intersection of the ids requested
 				// and the ids in the chunk.
 				std::unordered_set<float32_t> ids_in_chunk_isection;
-				std::set_intersection(
-					_ids_in_chunk.begin(), _ids_in_chunk.end(),
-					requested_hashes.begin(), requested_hashes.end(), 
-					std::back_inserter(ids_in_chunk_isection)
-				);
+				for (const auto& id : _ids_in_chunk) 
+				{
+					if (requested_hashes.count(id)) 
+					{
+						ids_in_chunk_isection.insert(id);
+					}
+				}
 
 
 				// No ids in chunk -> skip
@@ -618,6 +817,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				}
 
 				// Resize the vector only if we need a larger size, avoids having to realloc this data every iteration.
+				// gives us back a mapping of ids to spans to use for mask decoding.
 				auto mask_spans = detail::realloc_mask_buffer_if_necessary(_mask_buffer, ids_in_chunk_isection, chunk_num_elems);
 
 				// Now fill them in parallel, note that this doesn't std::fill 0 into the vector but instead
@@ -640,8 +840,11 @@ namespace NAMESPACE_CRYPTOMATTE_API
 							// Skip any zero rank-channels, accumulate the rest, 
 							if (rank_chunk[idx] != static_cast<float32_t>(0))
 							{
-								auto& it = mask_spans.at(rank_chunk[idx]);
-								it[idx] += covr_chunk[idx];
+								if (ids_in_chunk_isection.contains(rank_chunk[idx]))
+								{
+									auto& it = mask_spans.at(rank_chunk[idx]);
+									it[idx] += covr_chunk[idx];
+								}
 							}
 						});
 				}
@@ -767,24 +970,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				}
 
 				// Resize the vector only if we need a larger size, avoids having to realloc this data every iteration.
-				auto _new_max_size = ids_in_chunk.size() * chunk_num_elems;
-				if (_mask_buffer.size() < _new_max_size) 
-				{
-					_CRYPTOMATTE_PROFILE_SCOPE("realloc mask buffer");
-					size_t new_capacity = std::max(_mask_buffer.capacity() * 2, _new_max_size);
-					_mask_buffer.resize(new_capacity);
-				}
-				std::span<float32_t> _mask_buffer_span(_mask_buffer.data(), _new_max_size);
-				std::unordered_map<float32_t, std::span<float32_t>> mask_spans;
-
-				// First set up the spans correctly
-				size_t _count = 0;
-				for (auto id : ids_in_chunk)
-				{
-					size_t offset = _count * chunk_num_elems;
-					mask_spans[id] = std::span<float32_t>(_mask_buffer_span.data() + offset, chunk_num_elems);
-					++_count;
-				}
+				auto mask_spans = detail::realloc_mask_buffer_if_necessary(_mask_buffer, ids_in_chunk, chunk_num_elems);
 
 				{
 					_CRYPTOMATTE_PROFILE_SCOPE("decompress mask chunks");

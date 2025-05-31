@@ -121,6 +121,18 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
+	std::vector<std::string> manifest::names() const noexcept
+	{
+		std::vector<std::string> out;
+		for (const auto& [name, _] : m_Mapping)
+		{
+			out.push_back(name);
+		}
+		return out;
+	}
+
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
 	size_t manifest::size() const noexcept
 	{
 		return m_Mapping.size();

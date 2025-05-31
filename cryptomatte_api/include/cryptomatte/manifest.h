@@ -66,6 +66,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \{
 		/// \name retrieving the mapping
 
+		std::vector<std::string> names() const noexcept;
+
 		/// Retrieve the full name-to-hash mapping, cast to the specified type.
 		/// 
 		/// This function provides access to the name-hash mapping in the desired format:

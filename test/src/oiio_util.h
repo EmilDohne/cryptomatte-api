@@ -67,7 +67,7 @@ namespace test_util
 		/// \param name A label for the images, used in error messages.
 		/// \throws std::runtime_error if the channels differ in structure or content.
 		template <typename T>
-		void compare_channels(std::vector<T>& a, std::vector<T> b, std::string name, size_t channel_idx)
+		void compare_channels(const std::vector<T>& a, const std::vector<T>& b, std::string name, size_t channel_idx)
 		{
 			if (a.size() != b.size())
 			{
@@ -104,7 +104,7 @@ namespace test_util
 		/// \param name A label for the images, used in error messages.
 		/// \throws std::runtime_error if the images differ in structure or content.
 		template <typename T>
-		void compare_images(std::vector<std::vector<T>> a, std::vector<std::vector<T>> b, std::string name)
+		void compare_images(const std::vector<std::vector<T>>& a, const std::vector<std::vector<T>>& b, std::string name)
 		{
 			if (a.size() != b.size())
 			{
