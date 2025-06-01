@@ -66,7 +66,16 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// \{
 		/// \name retrieving the mapping
 
+		/// Retrieve all the names stored by this manifest as a vector.
 		std::vector<std::string> names() const noexcept;
+
+		template <typename T = uint32_t>
+			requires std::is_same_v<T, float32_t> || std::is_same_v<T, std::string> || std::is_same_v<T, uint32_t>
+		std::vector<std::pair<std::string, T>> hashes() const noexcept
+		{
+			auto _mapping = this->mapping<T>();
+
+		}
 
 		/// Retrieve the full name-to-hash mapping, cast to the specified type.
 		/// 
