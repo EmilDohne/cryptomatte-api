@@ -69,12 +69,29 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// Retrieve all the names stored by this manifest as a vector.
 		std::vector<std::string> names() const noexcept;
 
+		/// Retrieve all the hashes stored by this manifest as a vector.
+		/// 
+		/// This returns the values associated with the names in the manifest, transformed into the desired
+		/// output format specified by the template parameter `T`. Supported formats include:
+		/// - `uint32_t`: The raw internal representation (default).
+		/// - `float32_t`: A bit-cast form of the hash, this is what the hashes are stored as in-file.
+		/// - `std::string`: A hexadecimal string representation of the hash.
+		/// 
+		/// \tparam T The type to return the hash values as, defaulting to `uint32_t`. Must be one of:
+		///           `float32_t`, `std::string`, or `uint32_t`.
+		/// 
+		/// \return A vector containing all hash values, cast to the requested type, in the same order as `names()`.
 		template <typename T = uint32_t>
 			requires std::is_same_v<T, float32_t> || std::is_same_v<T, std::string> || std::is_same_v<T, uint32_t>
-		std::vector<std::pair<std::string, T>> hashes() const noexcept
+		std::vector<T> hashes() const noexcept
 		{
 			auto _mapping = this->mapping<T>();
-
+			std::vector<T> out;
+			for (const auto& [key, value] : _mapping)
+			{
+				out.push_back(value);
+			}
+			return out;
 		}
 
 		/// Retrieve the full name-to-hash mapping, cast to the specified type.

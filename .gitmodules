@@ -16,3 +16,6 @@
 [submodule "thirdparty/pybind11"]
 	path = thirdparty/pybind11
 	url = https://github.com/pybind/pybind11
+[submodule "thirdparty/pybind11_image_util"]
+	path = thirdparty/pybind11_image_util
+	url = https://github.com/EmilDohne/pybind11_image_util

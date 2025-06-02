@@ -41,7 +41,7 @@ find_package(OpenImageIO CONFIG REQUIRED)
 set(COMPRESSED_IMAGE_USE_VCPKG OFF)
 add_subdirectory(thirdparty/compressed-image)
 
-# spdlog for loggig
+# spdlog for logging
 set(SPDLOG_USE_STD_FORMAT ON)
 add_subdirectory(thirdparty/spdlog)
 
@@ -71,6 +71,7 @@ endif()
 
 if (CRYPTOMATTE_API_BUILD_PYTHON)
     add_subdirectory(thirdparty/pybind11)
+    add_subdirectory(thirdparty/pybind11_image_util)
     add_subdirectory(python)
 endif()
 
