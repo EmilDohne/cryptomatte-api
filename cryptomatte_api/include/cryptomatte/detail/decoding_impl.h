@@ -88,7 +88,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 				{
 					// Either use the hash as hex or get the name from the mapping.
 					std::string name = uint32_t_to_hex_str(std::bit_cast<uint32_t>(key));
-					for (const auto [_name, hash] : mapping)
+					for (const auto& [_name, hash] : mapping)
 					{
 						if (hash == key)
 						{
