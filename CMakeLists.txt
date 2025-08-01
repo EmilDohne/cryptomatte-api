@@ -85,6 +85,7 @@ endif()
 if (CRYPTOMATTE_API_BUILD_PYTHON)
     add_subdirectory(thirdparty/pybind11)
     add_subdirectory(thirdparty/pybind11_image_util)
+    add_subdirectory(thirdparty/pybind11_json)
     add_subdirectory(python)
 endif()
 

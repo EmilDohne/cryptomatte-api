@@ -47,7 +47,7 @@ Construct a cryptomatte metadata object.
                 auto input_ptr = OIIO::ImageInput::open(filepath);
                 if (!input_ptr) {
                     throw std::runtime_error(
-                        std::format("Failed to open file {}.", filepath)
+                        std::format("Failed to open file {}.", filepath.string())
                     );
                 }
                 auto& spec = input_ptr->spec();

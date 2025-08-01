@@ -10,7 +10,7 @@
 
 #include <compressed/channel.h>
 #include <OpenImageIO/imageio.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace NAMESPACE_CRYPTOMATTE_API
 {

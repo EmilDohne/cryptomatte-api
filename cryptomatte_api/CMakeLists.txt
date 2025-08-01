@@ -7,6 +7,7 @@ target_include_directories(cryptomatte_api PRIVATE "${PROJECT_SOURCE_DIR}/includ
 target_link_libraries(cryptomatte_api PUBLIC
 	compressed_image 
 	spdlog::spdlog_header_only 
+	nlohmann_json
 	OpenImageIO::OpenImageIO
 )
 
@@ -42,7 +43,8 @@ target_include_directories(cryptomatte_api_profiling PUBLIC "${PROJECT_SOURCE_DI
 target_include_directories(cryptomatte_api_profiling PRIVATE "${PROJECT_SOURCE_DIR}/include/cryptomatte")
 target_link_libraries(cryptomatte_api_profiling PUBLIC
 	compressed_image 
-	spdlog::spdlog_header_only 
+	spdlog::spdlog_header_only
+	nlohmann_json
 	OpenImageIO::OpenImageIO
 )
 target_compile_definitions(cryptomatte_api_profiling PUBLIC _CRYPTOMATTE_PROFILE=1)

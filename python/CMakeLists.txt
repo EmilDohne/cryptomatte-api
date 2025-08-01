@@ -6,6 +6,8 @@ pybind11_add_module(cryptomatte_api_py bindings/main.cpp)
 # Ensure we build as compressed_image and not compressed_image_py
 set_target_properties(cryptomatte_api_py PROPERTIES OUTPUT_NAME cryptomatte_api)
 target_include_directories(cryptomatte_api_py PRIVATE cryptomatte_api bindings)
+# Include the wrappers used for compressed_image that way we can attach to them directly.
+target_include_directories(cryptomatte_api_py PRIVATE ../thirdparty/compressed-image/python/bindings)
 target_link_libraries(cryptomatte_api_py PUBLIC nlohmann_json pybind11_json py_image_util cryptomatte_api)
 
 install(TARGETS cryptomatte_api_py

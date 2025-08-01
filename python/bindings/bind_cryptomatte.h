@@ -3,6 +3,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/functional.h>
 #include <pybind11/chrono.h>
+#include <pybind11/stl/filesystem.h>
 
 #include <py_img_util/image.h>
 
@@ -14,7 +15,7 @@ using namespace NAMESPACE_CRYPTOMATTE_API;
 
 void bind_cryptomatte(py::module_& m)
 {
-    py::class_<cryptomatte> crypto_class(m, "Cryptomatte", R"doc(
+    py::class_<cryptomatte, std::shared_ptr<cryptomatte>> crypto_class(m, "Cryptomatte", R"doc(
 
 A cryptomatte file loaded from disk or memory storing the channels as compressed buffer
 
@@ -30,27 +31,13 @@ Construct an empty Cryptomatte object.
 )doc");
 
     crypto_class
-        .def(py::init<
-                std::unordered_map<std::string, compressed::channel<float32_t>>,
-                const metadata&>(),
-            py::arg("channels"),
-            py::arg("metadata"),
-            R"doc(
-Construct a Cryptomatte from compressed float32 channels.
-
-:param channels: Mapping of channel names to compressed float32 image channels.
-:param metadata: Metadata used to validate and classify the provided channels.
-:raises ValueError: If the channel map is empty or any cryptomatte channel has inconsistent encoding.
-            )doc");
-
-    crypto_class
         .def(
             py::init(
                 [](
                     std::unordered_map<std::string, py::array_t<float32_t>>& channels,
                     size_t width,
                     size_t height,
-                    const metadata& metadata
+                    metadata& metadata
                 )
                 {
                     std::unordered_map<std::string, std::vector<float32_t>> converted_channels;
@@ -62,8 +49,7 @@ Construct a Cryptomatte from compressed float32 channels.
                             width,
                             height);
                     }
-                    return std::make_unique<cryptomatte>(
-                        converted_channels, width, height, metadata);
+                    return std::make_unique<cryptomatte>(converted_channels, width, height, metadata);
                 }
             ),
             py::arg("channels"),
@@ -147,16 +133,24 @@ Return whether preview (legacy .r/.g/.b) channels are available and loaded.
             [](cryptomatte& self)
             {
                 auto result = self.preview();
-                return py_img_util::to_py_array(
-                    std::move(result),
-                    self.width(),
-                    self.height()
-                );
+                std::vector<py::array_t<float32_t>> out;
+                for (auto& channel : result)
+                {
+                    out.push_back(
+                        py_img_util::to_py_array(
+                            std::move(channel),
+                            self.width(),
+                            self.height()
+                        )
+                    );
+                }
+                return out;
             },
             R"doc(
-Return the preview (legacy) image channels as float32 numpy arrays.
+Return the preview (legacy) image channels as float32 numpy arrays. This list may be empty if the cryptomatte was loaded
+without `load_preview` enabled.
 
-:returns: List of numpy arrays representing preview channels.
+:returns: List of numpy arrays representing preview channels, may be empty
 )doc"
         );
 
@@ -168,71 +162,30 @@ Return the preview (legacy) image channels as float32 numpy arrays.
     crypto_class
         .def(
             "mask",
-            [](cryptomatte& self, const std::string& name)
+            [](cryptomatte& self, std::variant<std::string, uint32_t> name_or_hash)
             {
-                auto result = self.mask(name);
+                if (std::holds_alternative<std::string>(name_or_hash))
+                {
+                    auto result = self.mask(std::get<std::string>(name_or_hash));
+                    return py_img_util::to_py_array(
+                        std::move(result),
+                        self.width(),
+                        self.height()
+                    );
+                }
+                auto result = self.mask(std::get<uint32_t>(name_or_hash));
                 return py_img_util::to_py_array(
                     std::move(result),
                     self.width(),
                     self.height()
                 );
             },
-            py::arg("name"),
+            py::arg("name_or_hash"),
             R"doc(
 Compute and return a decoded mask for the given object name.
 
 :param name: Name from the manifest.
-:returns: Float32 array mask.
-)doc"
-        );
-
-    // Single-mask by hash (raw array)
-    crypto_class
-        .def(
-            "mask",
-            [](cryptomatte& self, uint32_t hash)
-            {
-                auto result = self.mask(hash);
-                return py_img_util::to_py_array(
-                    std::move(result),
-                    self.width(),
-                    self.height()
-                );
-            },
-            py::arg("hash"),
-            R"doc(
-Compute and return a decoded mask for the given object hash.
-
-:param hash: Pixel hash.
-:returns: Float32 array mask.
-)doc"
-        );
-
-    // Single-mask (compressed) by name
-    crypto_class
-        .def(
-            "mask_compressed",
-            py::overload_cast<std::string>(&cryptomatte::mask_compressed, py::const_),
-            py::arg("name"),
-            R"doc(
-Compute and return a compressed mask for the given object name.
-
-:param name: Object name.
-:returns: Compressed mask channel.
-)doc"
-        );
-
-    // Single-mask (compressed) by hash
-    crypto_class
-        .def(
-            "mask_compressed",
-            py::overload_cast<uint32_t>(&cryptomatte::mask_compressed, py::const_),
-            py::arg("hash"),
-            R"doc(
-Compute and return a compressed mask for the given object hash.
-
-:param hash: Object hash.
-:returns: Compressed mask channel.
+:returns: np.float32 array mask.
 )doc"
         );
 
@@ -240,11 +193,32 @@ Compute and return a compressed mask for the given object hash.
     crypto_class
         .def(
             "masks",
-            [](cryptomatte& self, const std::vector<std::string>& names)
+            [](cryptomatte& self, std::optional<std::variant<std::vector<std::string>, std::vector<uint32_t>>> names_or_hashes)
             {
-                auto _result = self.masks(names);
+                // This function essentially wraps 3 unique functions in cpp into a single one for ease of use and a more
+                // pythonic interface. We take an optional list of strings or integers and dispatch to the right function
+                // accordingly
+                std::unordered_map<std::string, std::vector<float32_t>> result_from_cpp;
+                if (names_or_hashes)
+                {
+                    auto& names_or_hashes_val = names_or_hashes.value();
+                    if (std::holds_alternative<std::vector<std::string>>(names_or_hashes_val))
+                    {
+                        result_from_cpp = self.masks(std::get<std::vector<std::string>>(names_or_hashes_val));
+                    }
+                    else
+                    {
+                        result_from_cpp = self.masks(std::get<std::vector<uint32_t>>(names_or_hashes_val));
+                    }
+                }
+                else
+                {
+                    result_from_cpp = self.masks();
+                }
+
+                // Now finally, convert from the cpp types into python numpy arrays (mapped by string)
                 std::unordered_map<std::string, py::array_t<float32_t>> out;
-                for (auto& [key, value] : _result)
+                for (auto& [key, value] : result_from_cpp)
                 {
                     out[key] = py_img_util::to_py_array(
                         std::move(value),
@@ -254,105 +228,7 @@ Compute and return a compressed mask for the given object hash.
                 }
                 return out;
             },
-            py::arg("names"),
-            R"doc(
-Compute multiple masks by name.
-
-:param names: List of object names.
-:returns: Dictionary of decoded masks.
-)doc"
-        );
-
-    // Multi-mask (raw arrays) by hashes
-    crypto_class
-        .def(
-            "masks",
-            [](cryptomatte& self, const std::vector<uint32_t>& hashes)
-            {
-                auto _result = self.masks(hashes);
-                std::unordered_map<std::string, py::array_t<float32_t>> out;
-                for (auto& [key, value] : _result)
-                {
-                    out[key] = py_img_util::to_py_array(
-                        std::move(value),
-                        self.width(),
-                        self.height()
-                    );
-                }
-                return out;
-            },
-            py::arg("hashes"),
-            R"doc(
-Compute multiple masks by hash.
-
-:param hashes: List of object hashes.
-:returns: Dictionary of decoded masks.
-)doc"
-        );
-
-    // Multi-mask (raw arrays) for all masks
-    crypto_class
-        .def(
-            "masks",
-            [](cryptomatte& self)
-            {
-                auto _result = self.masks();
-                std::unordered_map<std::string, py::array_t<float32_t>> out;
-                for (auto& [key, value] : _result)
-                {
-                    out[key] = py_img_util::to_py_array(
-                        std::move(value),
-                        self.width(),
-                        self.height()
-                    );
-                }
-                return out;
-            },
-            R"doc(
-Compute and return all decoded masks.
-
-:returns: Dictionary of decoded masks.
-)doc"
-        );
-
-    // Multi-mask (compressed) by names
-    crypto_class
-        .def(
-            "masks_compressed",
-            py::overload_cast<std::vector<std::string>>(&cryptomatte::masks_compressed, py::const_),
-            py::arg("names"),
-            R"doc(
-Compute multiple compressed masks by name.
-
-:param names: List of object names.
-:returns: Dictionary of compressed masks.
-)doc"
-        );
-
-    // Multi-mask (compressed) by hashes
-    crypto_class
-        .def(
-            "masks_compressed",
-            py::overload_cast<std::vector<uint32_t>>(&cryptomatte::masks_compressed, py::const_),
-            py::arg("hashes"),
-            R"doc(
-Compute multiple compressed masks by hash.
-
-:param hashes: List of object hashes.
-:returns: Dictionary of compressed masks.
-)doc"
-        );
-
-    // Multi-mask (compressed) for all masks
-    crypto_class
-        .def(
-            "masks_compressed",
-            py::overload_cast<>(&cryptomatte::masks_compressed, py::const_),
-            R"doc(
-Compute and return all compressed masks.
-
-:returns: Dictionary of compressed masks.
-)doc"
+            py::arg("names_or_hashes")
         );
 
     //----------------------------------------------------------------------------//
