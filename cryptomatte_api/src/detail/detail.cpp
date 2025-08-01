@@ -1,6 +1,7 @@
 #include "detail/detail.h"
 
 #include <format>
+#include <cstdint>
 #include <string>
 
 namespace NAMESPACE_CRYPTOMATTE_API
