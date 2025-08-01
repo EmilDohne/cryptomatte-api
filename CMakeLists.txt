@@ -37,10 +37,10 @@ option(CRYPTOMATTE_API_BUILD_DOCS OFF)
 option(CRYPTOMATTE_API_BUILD_BENCHMARKS OFF)
 option(CRYPTOMATTE_API_BUILD_PYTHON OFF)
 
-option(_CRYPTOMATTE_API_IMAGE_SANITIZE_FLAGS "Internal CI flag for enabling sanitizer builds" OFF)
+option(_CRYPTOMATTE_API_SANITIZE_FLAGS "Internal CI flag for enabling sanitizer builds" OFF)
 
 
-if (CRYPTOMATTE_API_IMAGE_USE_VCPKG)
+if (CRYPTOMATTE_API_USE_VCPKG)
     include("${PROJECT_SOURCE_DIR}/thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake")
     message("CryptomatteAPI: Picked up toolchain at '${PROJECT_SOURCE_DIR}/thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake'")
 endif()
