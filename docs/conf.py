@@ -19,7 +19,7 @@ breathe_projects = {}
 
 if read_the_docs_build:
     print("Detected we are running in Readthedocs")
-    input_dir = '../cryptomatte-api'
+    input_dir = '../cryptomatte_api'
     output_dir = 'build'
     configureDoxyfile(input_dir, output_dir)
     subprocess.call('doxygen', shell=True)
