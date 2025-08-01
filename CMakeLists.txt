@@ -4,8 +4,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set (CMAKE_CXX_STANDARD 20)
 project (CryptomatteAPIBuild)
 
+# If we are compiling as the main project we automatically turn on all the build options.
+# This can be circumvented by passing "-DCRYPTOMATTE_DETERMINE_MAIN_PROJECT=OFF"
 set(MAIN_PROJECT OFF)
-if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+option (
+    CRYPTOMATTE_DETERMINE_MAIN_PROJECT 
+    "Whether to automatically determine if we are building this module as main project" 
+    ON
+)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR AND CRYPTOMATTE_DETERMINE_MAIN_PROJECT)
+    message("Compiling cryptomatte-api as main project")
     set(MAIN_PROJECT ON)
 endif()
 
@@ -13,6 +21,7 @@ if (MAIN_PROJECT)
     set(CRYPTOMATTE_API_EXTENDED_WARNINGS ON)
     set(CRYPTOMATTE_API_IMAGE_USE_VCPKG ON)
     set(CRYPTOMATTE_API_BUILD_TESTS ON)
+    set(CRYPTOMATTE_API_IMAGE_BUILD_EXAMPLES ON)
     set(CRYPTOMATTE_API_BUILD_DOCS ON)
     set(CRYPTOMATTE_API_BUILD_BENCHMARKS ON)
     set(CRYPTOMATTE_API_BUILD_PYTHON ON)
@@ -22,10 +31,14 @@ endif()
 option(CRYPTOMATTE_API_EXTENDED_WARNINGS OFF)
 option(CRYPTOMATTE_API_IMAGE_USE_VCPKG OFF)
 option(CRYPTOMATTE_API_BUILD_TESTS OFF)
+option(CRYPTOMATTE_API_IMAGE_BUILD_EXAMPLES OFF)
 option(CRYPTOMATTE_API_BUILD_EXAMPLES OFF)
 option(CRYPTOMATTE_API_BUILD_DOCS OFF)
 option(CRYPTOMATTE_API_BUILD_BENCHMARKS OFF)
 option(CRYPTOMATTE_API_BUILD_PYTHON OFF)
+
+option(_CRYPTOMATTE_API_IMAGE_SANITIZE_FLAGS "Internal CI flag for enabling sanitizer builds" OFF)
+
 
 if (CRYPTOMATTE_API_IMAGE_USE_VCPKG)
     include("${PROJECT_SOURCE_DIR}/thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake")

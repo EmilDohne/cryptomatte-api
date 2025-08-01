@@ -1,8 +1,56 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel",
-    "ninja",
-    "cmake>=3.12"
-]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "cryptomatte-api"
+version = "1.0.0"
+description = "A fast, memory-efficient and robust library for loading, validating and decoding cryptomattes."
+authors = [{name = "Emil Dohne", email="emildohne@gmail.com"}]
+maintainers = [{name = "Emil Dohne", email="emildohne@gmail.com"}]
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+requires-python = ">= 3.9"
+dependencies = ["numpy", "compressed-image"]
+
+[project.urls]
+Homepage = "https://cryptomatte-api.readthedocs.io/en/latest/"
+Source = "https://github.com/EmilDohne/cryptomatte-api"
+Documentation = "https://cryptomatte-api.readthedocs.io/en/latest/"
+Issues = "https://github.com/EmilDohne/cryptomatte-api/issues"
+
+[tool.scikit-build]
+# This is admittedly a bit hacky but on windows the automatic wheel repair did not appear
+# to work, so we instead build into a fixed place rather than into e.g. build/{wheel_tag}.
+# Before each build we clear the dir and rebuild from scratch (dependencies are cached
+# so subsequent builds are not too affected)
+build-dir = "build/wheel_generation"
+cmake.version = "CMakeLists.txt"
+# This is our python 'package' with the ini and the stubs.
+wheel.packages = ["python/py_module/cryptomatte_api"]
+# Ensure the wheel is not installed directly into site-packages but instead
+# is put into an appropriate subdir
+wheel.install-dir = "cryptomatte_api"
+sdist.exclude = [".github", "benchmark", "docs", "examples", "test"]
+
+[tool.scikit-build.cmake.define]
+# We want to be explicit about which builds we kick off. We don't for examples
+# care about the cpp tests or the docs here as that would just bloat compile times.
+CRYPTOMATTE_DETERMINE_MAIN_PROJECT = false
+CRYPTOMATTE_API_IMAGE_USE_VCPKG = true
+CRYPTOMATTE_API_BUILD_PYTHON = true
+CRYPTOMATTE_API_EXTENDED_WARNINGS = true
+
+[tool.cibuildwheel]
+archs = "auto64"
+manylinux-x86_64-image = "quay.io/pypa/manylinux_2_34_x86_64:latest"
+test-requires = "pytest"
+test-command = "pytest {project}/python/test"
+
+# cibuildhweel by default repairs wheels only on linux and macos but doesn't on windows. It is
+# however recommended in their docs to run delvewheel which will handle this for us as well
+# as making sure the dependency dlls are uniquely tagged to avoid clashes when it comes times
+# to e.g. importing both cryptomatte_api and openimageio.
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair --add-path build/wheel_generation/python/Release --wheel-dir {dest_dir} {wheel}"
