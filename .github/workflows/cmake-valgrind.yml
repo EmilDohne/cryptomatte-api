@@ -56,7 +56,7 @@ jobs:
         CXX: ${{ matrix.compilercxx }}
       run: |
         cmake -B ${{github.workspace}}/build        \
-            -DCRYPTOMATTE_API_DETERMINE_MAIN_PROJECT=OFF \
+            -DCRYPTOMATTE_DETERMINE_MAIN_PROJECT=OFF \
             -DCRYPTOMATTE_API_USE_VCPKG=ON         \
             -DCRYPTOMATTE_API_BUILD_TESTS=ON       \
             -DCRYPTOMATTE_API_EXTENDED_WARNINGS=ON
