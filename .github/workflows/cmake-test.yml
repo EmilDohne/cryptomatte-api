@@ -1,0 +1,116 @@
+name: Test with asan/leaksan/ubsan
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+     - master
+  pull_request:
+    branches:
+     - master
+  release:
+    types:
+      - published
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  test:
+    permissions:
+      actions: read
+      contents: read
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+           - name: Ubuntu GCC
+             os: ubuntu-24.04
+             compiler: gcc-13
+             compilercxx: g++-13
+             multiline-separator: \
+           - name: Ubuntu Clang
+             os: ubuntu-24.04
+             compiler: clang
+             compilercxx: clang++
+             multiline-separator: \
+           - name: Windows MSVC
+             os: windows-latest
+             compiler: msvc
+             compilercxx: msvc
+             multiline-separator: "`"
+           - name: MacOS ARM GCC
+             os: macos-latest
+             compiler: gcc-13
+             compilercxx: g++-13
+             multiline-separator: \
+           - name: MacOS ARM AppleClang
+             os: macos-latest
+             compiler: clang
+             compilercxx: clang++
+             extra_cxxflags: -fexperimental-library
+             multiline-separator: \
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: 0
+        
+    # Further brew packages needed to run/install vcpkg dependencies
+    - name: Setup MacOS dependencies
+      if: matrix.os == 'macos-latest'
+      run: |
+          brew install autoconf
+          brew install libtool
+          brew install automake
+          brew install onedpl
+
+    - name: Restore vcpkg cache
+      id: vcpkg-cache
+      uses: TAServers/vcpkg-cache@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        prefix: ${{ matrix.os }}_${{ matrix.compilercxx }}_test_vcpkg
+
+    - name: Configure CMake ${{ matrix.os }}-${{ matrix.compilercxx }}
+      env:
+        VCPKG_FEATURE_FLAGS: "binarycaching" # Possibly redundant, but explicitly sets the binary caching feature flag
+        VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        CC: ${{ matrix.compiler }}
+        CXX: ${{ matrix.compilercxx }}
+      run: |
+        cmake -B ${{github.workspace}}/build                ${{ matrix.multiline-separator}}
+            -DCMAKE_OSX_ARCHITECTURES="arm64"               ${{ matrix.multiline-separator}}
+            ${{ matrix.extra_cxxflags && format('-DCMAKE_CXX_FLAGS={0}', matrix.extra_cxxflags) }} ${{ matrix.multiline-separator}}
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}          ${{ matrix.multiline-separator}}
+            -DCRYPTOMATTE_API_DETERMINE_MAIN_PROJECT=OFF    ${{ matrix.multiline-separator}}
+            -DCRYPTOMATTE_API_USE_VCPKG=ON                  ${{ matrix.multiline-separator}}
+            -DCRYPTOMATTE_API_EXTENDED_WARNINGS=ON          ${{ matrix.multiline-separator}}
+            -DCRYPTOMATTE_API_BUILD_TESTS=ON                ${{ matrix.multiline-separator}}
+            -D_CRYPTOMATTE_API_IMAGE_SANITIZE_FLAGS=ON
+
+    - name: Build ${{ matrix.os }}-${{ matrix.compilercxx }}
+      env:
+        CC: ${{ matrix.compiler }}
+        CXX: ${{ matrix.compilercxx }}
+        CFLAGS: ${{ matrix.cflags }}
+        CXXFLAGS: ${{ matrix.cxxflags }}
+      run:  |
+          cmake --build ${{github.workspace}}/build ${{ matrix.multiline-separator}}
+            --config ${{env.BUILD_TYPE}}            ${{ matrix.multiline-separator}}
+            --parallel $(getconf _NPROCESSORS_ONLN || sysctl -n hw.ncpu || echo %NUMBER_OF_PROCESSORS%)
+
+    # On windows we need to copy the test files differently as it generates sub-folders
+    # for the copied test files
+    - name: Copy Testfiles on Windows
+      if: runner.os == 'Windows'
+      working-directory: ${{github.workspace}}/build/test
+      run: xcopy ".\\${{env.BUILD_TYPE}}\\images" ".\\images" /E /I
+      
+
+    - name: Test  ${{ matrix.os }}-${{ matrix.compilercxx }}
+      working-directory: ${{github.workspace}}/build/test
+      run: ctest -C ${{env.BUILD_TYPE}} --extra-verbose --stop-on-failure --output-on-failure
