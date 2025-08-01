@@ -2,7 +2,7 @@
 
 #include "bind_cryptomatte.h"
 #include "bind_metadata.h"
-#include "bind_metadata.h"
+#include "bind_manifest.h"
 
 namespace py = pybind11;
 
