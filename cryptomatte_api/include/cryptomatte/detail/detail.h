@@ -3,6 +3,7 @@
 #include "macros.h"
 
 #include <string_view>
+#include <cstdint>
 #include <string>
 
 namespace NAMESPACE_CRYPTOMATTE_API
