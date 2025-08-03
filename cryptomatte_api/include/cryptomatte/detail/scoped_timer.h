@@ -21,20 +21,20 @@
 #include <mutex>
 #include <thread>
 
-#pragma warning (push)
-#pragma warning (disable : 4117)
-// Alias __FUNCSIG__ for non Windows platforms as well
-#ifdef __FUNCSIG__
-#define __FUNCSIG__ __PRETTY_FUNCTION__
+#if defined(_MSC_VER)
+  #define FUNCTION_SIGNATURE __FUNCSIG__
+#elif defined(__GNUC__) || defined(__clang__)
+  #define FUNCTION_SIGNATURE __PRETTY_FUNCTION__
+#else
+  #define FUNCTION_SIGNATURE __func__  // fallback: standard C99
 #endif
-#pragma warning (pop)
 
 #ifdef _CRYPTOMATTE_PROFILE
 #define _CRYPTOMATTE_CONCAT_IMPL(x, y) x##y
 #define _CRYPTOMATTE_CONCAT(x, y) _CRYPTOMATTE_CONCAT_IMPL(x, y)
 
 #define _CRYPTOMATTE_PROFILE_SCOPE(name) NAMESPACE_CRYPTOMATTE_API::detail::InstrumentationTimer _CRYPTOMATTE_CONCAT(timer_, __COUNTER__)(name)
-#define _CRYPTOMATTE_PROFILE_FUNCTION()  _CRYPTOMATTE_PROFILE_SCOPE(__FUNCTION__)
+#define _CRYPTOMATTE_PROFILE_FUNCTION()  _CRYPTOMATTE_PROFILE_SCOPE(FUNCTION_SIGNATURE)
 #else
 #define _CRYPTOMATTE_PROFILE_SCOPE(name)
 #define _CRYPTOMATTE_PROFILE_FUNCTION()

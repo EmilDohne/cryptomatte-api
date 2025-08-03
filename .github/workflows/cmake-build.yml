@@ -86,7 +86,7 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES="arm64"               ${{ matrix.multiline-separator}}
             ${{ matrix.extra_cxxflags && format('-DCMAKE_CXX_FLAGS={0}', matrix.extra_cxxflags) }} ${{ matrix.multiline-separator}}
             -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}          ${{ matrix.multiline-separator}}
-            -DCRYPTOMATTE_API_DETERMINE_MAIN_PROJECT=OFF    ${{ matrix.multiline-separator}}
+            -DCRYPTOMATTE_DETERMINE_MAIN_PROJECT=OFF    ${{ matrix.multiline-separator}}
             -DCRYPTOMATTE_API_USE_VCPKG=ON                  ${{ matrix.multiline-separator}}
             -DCRYPTOMATTE_API_BUILD_EXAMPLES=ON             ${{ matrix.multiline-separator}}
             -DCRYPTOMATTE_API_EXTENDED_WARNINGS=ON          ${{ matrix.multiline-separator}}
