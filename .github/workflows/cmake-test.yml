@@ -110,7 +110,7 @@ jobs:
       working-directory: ${{github.workspace}}/build/test
       run: |
         xcopy ".\\${{env.BUILD_TYPE}}\\images" ".\\images" /E /I /Y
-        xcopy ".\\${{env.BUILD_TYPE}}\\references" ".\\references" /E /I /Y
+        xcopy ".\\${{env.BUILD_TYPE}}\\reference" ".\\reference" /E /I /Y
       
 
     - name: Test  ${{ matrix.os }}-${{ matrix.compilercxx }}
