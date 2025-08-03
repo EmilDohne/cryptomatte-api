@@ -45,7 +45,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		/// function will also attempt to load it from disk.
 		/// 
 		/// \param manif_key The metadata key for the manifest, will be used to determine whether its a sidecar or embedded.
-		/// \param manif_value The value found on the cryptomattes' 'manifest' or 'manif_file' value, we willtake care of
+		/// \param manif_value The value found on the cryptomattes' 'manifest' or 'manif_file' value, we will take care of
 		///					   parsing internally.
 		/// \param image_path The path to the image that the cryptomatte was loaded from, required to successfully decode
 		///					  sidecar files.

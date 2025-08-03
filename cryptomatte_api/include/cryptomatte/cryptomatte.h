@@ -81,6 +81,8 @@ namespace NAMESPACE_CRYPTOMATTE_API
 
 		/// \brief Load a file containing cryptomattes into multiple cryptomattes.
 		/// 
+		/// These cryptomattes will be ordered by their name alphabetically.
+		/// 
 		/// \param file The file path to load the image from. This must be an exr file.
 		/// \param load_preview Whether to load the legacy preview channels:
 		///                     {typename}.r, {typename}.g, {typename}.b

@@ -228,7 +228,7 @@ Compute and return a decoded mask for the given object name.
                 }
                 return out;
             },
-            py::arg("names_or_hashes")
+            py::arg("names_or_hashes") = py::none()
         );
 
     //----------------------------------------------------------------------------//

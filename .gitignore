@@ -19,6 +19,9 @@ benchmark/images/*.tga
 # Release artifacts
 release/
 
+# Wheel outputs
+wheelhouse/
+
 # setuptools related artifacts
 .venv/
 build/

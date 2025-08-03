@@ -213,15 +213,15 @@ TEST_CASE("cryptomatte::mask check clarisse_two_crypto.exr")
     auto cmattes = cryptomatte::load("images/clarisse_two_crypto.exr", false);
     REQUIRE(cmattes.size() == 2);
 
-    SUBCASE("crypto_material")
-    {
-        auto& crypto_material = cmattes[0];
-        iterate_manif_and_check_mask(crypto_material, "reference/clarisse/crypto_material");
-    }
     SUBCASE("crypto_asset")
     {
-        auto& crypto_object = cmattes[1];
+        auto& crypto_object = cmattes[0];
         iterate_manif_and_check_mask(crypto_object, "reference/clarisse/crypto_object");
+    }
+    SUBCASE("crypto_material")
+    {
+        auto& crypto_material = cmattes[1];
+        iterate_manif_and_check_mask(crypto_material, "reference/clarisse/crypto_material");
     }
 }
 
@@ -233,15 +233,15 @@ TEST_CASE("cryptomatte::mask_compressed check clarisse_two_crypto.exr")
     auto cmattes = cryptomatte::load("images/clarisse_two_crypto.exr", false);
     REQUIRE(cmattes.size() == 2);
 
-    SUBCASE("crypto_material")
-    {
-        auto& crypto_material = cmattes[0];
-        iterate_manif_and_check_mask_compressed(crypto_material, "reference/clarisse/crypto_material");
-    }
     SUBCASE("crypto_asset")
     {
-        auto& crypto_object = cmattes[1];
+        auto& crypto_object = cmattes[0];
         iterate_manif_and_check_mask_compressed(crypto_object, "reference/clarisse/crypto_object");
+    }
+    SUBCASE("crypto_material")
+    {
+        auto& crypto_material = cmattes[1];
+        iterate_manif_and_check_mask_compressed(crypto_material, "reference/clarisse/crypto_material");
     }
 }
 

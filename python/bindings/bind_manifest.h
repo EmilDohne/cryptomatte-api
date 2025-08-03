@@ -37,6 +37,41 @@ Load and decode a manifest from JSON.
 :returns: Decoded Manifest instance.
 )doc");
 
+    manifest_cls
+        .def_static("from_str",
+            [](const std::string str)
+            {
+                return manifest::from_str(str);
+            },
+                    py::arg("str"),
+                    R"doc(
+Load and decode a manifest from a json string.
+
+:param str: JSON string containing manifest data.
+:returns: Decoded Manifest instance.
+)doc");
+
+    manifest_cls
+        .def_static("load",
+                    [](std::string manif_key, std::string manif_value, std::string image_path)
+                    {
+                        return manifest::load(manif_key, manif_value, image_path);
+                    },
+                    py::arg("manif_key"),
+                    py::arg("manif_value"),
+                    py::arg("image_path"),
+                    R"doc(
+Load and decode a manifest from a json string.
+
+
+:param manif_key: The metadata key for the manifest, will be used to determine whether its a sidecar or embedded.
+:param manif_value: The value found on the cryptomattes' 'manifest' or 'manif_file' value, we will take care of
+			        parsing internally.
+:param image_path: The path to the image that the cryptomatte was loaded from, required to successfully decode
+			       sidecar files.
+:returns: Decoded Manifest instance.
+)doc");
+
     // Instance methods
     manifest_cls
         .def("contains",

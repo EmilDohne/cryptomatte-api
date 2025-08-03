@@ -202,6 +202,13 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			return {};
 		}
 
+		// Sort metadatas alphabetically, this is because OIIO appears to internally have different ordering of 
+		// metadata depending on the OS/Compiler. 
+		std::sort(metadatas.begin(), metadatas.end(), [](const auto& a, const auto& b) 
+		{
+			return a.name() < b.name();
+		});
+
 		std::vector<cryptomatte> out;
 		out.reserve(metadatas.size());
 

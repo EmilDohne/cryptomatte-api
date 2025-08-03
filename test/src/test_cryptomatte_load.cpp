@@ -184,8 +184,7 @@ TEST_CASE("cryptomatte::load clarisse 2 crypto")
  
     SUBCASE("cryptomatte_asset")
     {
-        // Despite the channels being asset first, the metadata is asset second
-        auto& crypto_object = cmattes[1];
+        auto& crypto_object = cmattes[0];
 
         CHECK(crypto_object.width() == 1920);
         CHECK(crypto_object.height() == 1080);
@@ -208,8 +207,7 @@ TEST_CASE("cryptomatte::load clarisse 2 crypto")
     }
     SUBCASE("cryptomatte_material")
     {
-        // Despite the channels being asset first, the metadata is material second
-        auto& crypto_object = cmattes[0];
+        auto& crypto_object = cmattes[1];
 
         CHECK(crypto_object.width() == 1920);
         CHECK(crypto_object.height() == 1080);

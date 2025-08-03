@@ -61,7 +61,11 @@ Load and parse cryptomatte metadata from an image file.
 :returns: List of Metadata objects parsed from the file.
 )pbdoc")
         .def_static("from_json",
-            &metadata::from_json,
+            [](nlohmann::json& json, std::string image_path)
+            {
+                json_ordered ordered = json;
+                return metadata::from_json(ordered, image_path);
+            },
             py::arg("json"),
             py::arg("image_path"),
             R"pbdoc(
