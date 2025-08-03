@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX)
 
+# Since we build cryptomatte_api as a static library we must compile with -fpic (or other relevant flags)
+set_property(TARGET cryptomatte_api PROPERTY POSITION_INDEPENDENT_CODE  ON)
+
 set(PYBIND11_FINDPYTHON ON)
 pybind11_add_module(cryptomatte_api_py bindings/main.cpp)
 # Ensure we build as compressed_image and not compressed_image_py
