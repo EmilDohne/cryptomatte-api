@@ -37,7 +37,7 @@ sdist.exclude = [".github", "benchmark", "docs", "examples", "test"]
 # We want to be explicit about which builds we kick off. We don't for examples
 # care about the cpp tests or the docs here as that would just bloat compile times.
 CRYPTOMATTE_DETERMINE_MAIN_PROJECT = false
-CRYPTOMATTE_API_IMAGE_USE_VCPKG = true
+CRYPTOMATTE_API_USE_VCPKG = true
 CRYPTOMATTE_API_BUILD_PYTHON = true
 CRYPTOMATTE_API_EXTENDED_WARNINGS = true
 
