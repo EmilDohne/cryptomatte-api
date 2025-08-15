@@ -51,8 +51,10 @@ endif()
 find_package(OpenImageIO CONFIG REQUIRED)
 
 # CompressedImage for loading images into a compressed memory buffer as well as compressing the mattes in-memory
-set(COMPRESSED_IMAGE_USE_VCPKG OFF)
-add_subdirectory(thirdparty/compressed-image)
+if(NOT TARGET compressed_image)
+    set(COMPRESSED_IMAGE_USE_VCPKG OFF)
+    add_subdirectory(thirdparty/compressed-image)
+endif()
 
 # spdlog for logging
 set(SPDLOG_USE_STD_FORMAT ON)

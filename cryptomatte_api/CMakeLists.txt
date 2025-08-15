@@ -6,8 +6,7 @@ target_include_directories(cryptomatte_api PUBLIC "${PROJECT_SOURCE_DIR}/include
 target_include_directories(cryptomatte_api PRIVATE "${PROJECT_SOURCE_DIR}/include/cryptomatte")
 target_link_libraries(cryptomatte_api PUBLIC
 	compressed_image 
-	spdlog::spdlog_header_only 
-	nlohmann_json
+	spdlog::spdlog_header_only
 	OpenImageIO::OpenImageIO
 )
 
