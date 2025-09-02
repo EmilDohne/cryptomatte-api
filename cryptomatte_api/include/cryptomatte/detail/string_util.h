@@ -103,6 +103,21 @@ namespace NAMESPACE_CRYPTOMATTE_API
 			return result;
 		}
 
+		/// Joins the vector of strings by the given separator.
+		inline std::string join(std::vector<std::string> data, std::string_view sep)
+		{
+			std::string out;
+			for (size_t i = 0; i < data.size(); ++i) 
+			{
+				out += data[i];
+				if (i + 1 < data.size())
+				{
+					out += sep;
+				}
+			}
+			return out;
+		}
+
 
 	} // str
 

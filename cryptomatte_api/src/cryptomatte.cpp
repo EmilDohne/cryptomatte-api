@@ -8,6 +8,7 @@
 
 #include "metadata.h"
 #include "detail/channel_util.h"
+#include "detail/oiio_util.h"
 #include "detail/decoding_impl.h"
 #include "detail/detail.h"
 #include "detail/scoped_timer.h"
@@ -220,6 +221,23 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		for (const auto& meta : metadatas)
 		{
 			auto channelnames = meta.channel_names(input_ptr->spec().channelnames);
+
+			// Check if the channels are not 32-bit (only the data channels, the preview channels can and do 
+			// differ, often being encoded as 16-bit halfs)
+			auto differing_channels = detail::find_mismatched_channels(
+				input_ptr->spec(), channelnames, OIIO::TypeDesc::FLOAT
+			);
+			if (differing_channels.size() > 0)
+			{
+				throw std::runtime_error(
+					std::format(
+					"Cryptomatte specification requires all data channels to be 32-bit float.\n"
+					"The following channels do not match this requirement:\n  {}",
+					str::join(differing_channels, ", ")
+					)
+				);
+			}
+
 			if (load_preview)
 			{
 				auto preview_channelnames = meta.legacy_channel_names(input_ptr->spec().channelnames);

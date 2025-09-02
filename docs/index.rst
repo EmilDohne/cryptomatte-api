@@ -65,8 +65,8 @@ disk (which validates it) and then extract one or more masks from the image.
         import cryptomatte_api as cmatte
 
         matte = cmatte.Cryptomatte.load("from/disk/path", load_preview=False)
-        mask = matte.mask("my_mask") // will raise if 'my_mask' is not available
-        all_masks = matte.masks_compressed() // get all the masks as compressed channels.
+        mask = matte.mask("my_mask") # will raise if 'my_mask' is not available
+        all_masks = matte.masks() # get all the masks of the cryptomatte mapped by names.
 
 
 Contents
