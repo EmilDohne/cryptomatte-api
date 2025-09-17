@@ -335,7 +335,7 @@ namespace NAMESPACE_CRYPTOMATTE_API
 		if (
 			res == ".r" || res == ".g" || res == ".b" || res == ".a" || 
 			res == ".R" || res == ".G" || res == ".B" || res == ".A" || 
-			res == ".red" || res == ".green" || res == ".blue" res == ".alpha"
+			res == ".red" || res == ".green" || res == ".blue" || res == ".alpha"
 			)
 		{
 			return true;
