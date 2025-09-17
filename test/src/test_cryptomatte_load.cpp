@@ -102,6 +102,16 @@ TEST_CASE("cryptomatte::load arnold 3 crypto with preview")
 
 // -----------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------
+TEST_CASE("cryptomatte::load invalid float16 bitdepth")
+{
+    // Cryptomattes are only supported for 32-bit, therefore loading it should raise an appropriate 
+    // error.
+    CHECK_THROWS_AS(cryptomatte::load("images/karma_cpu_solaris_one_crypto_16bit.exr", true), std::runtime_error);
+}
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
 TEST_CASE("cryptomatte::load arnold 1 crypto sidecar manif")
 {
     auto cmattes = cryptomatte::load("images/arnold_one_crypto_sidecar_manif.exr", false);
