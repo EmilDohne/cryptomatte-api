@@ -15,7 +15,19 @@ if (MSVC)
 endif()
 
 # Crank up warning levels on both MSVC, Clang and GCC
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
+	target_compile_options(
+		cryptomatte_api 
+		PUBLIC 
+		-fexperimental-library
+		PRIVATE 
+		-Wall 
+		-Werror 
+		-Wextra
+		-Wno-pass-failed=transform-warning
+	)
+	target_link_options(cryptomatte_api PUBLIC -fexperimental-library)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 	target_compile_options(
 		cryptomatte_api 
 		PRIVATE 
@@ -53,7 +65,19 @@ if (MSVC)
 	target_compile_options(cryptomatte_api_profiling PRIVATE /utf-8 /MP /DNOMINMAX)
 endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
+	target_compile_options(
+		cryptomatte_api_profiling 
+		PUBLIC 
+		-fexperimental-library
+		PRIVATE 
+		-Wall 
+		-Werror 
+		-Wextra
+		-Wno-pass-failed=transform-warning
+	)
+	target_link_options(cryptomatte_api_profiling PUBLIC -fexperimental-library)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 	target_compile_options(
 		cryptomatte_api_profiling 
 		PRIVATE 
