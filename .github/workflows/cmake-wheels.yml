@@ -97,7 +97,7 @@ jobs:
             CC=clang
             CXX=clang++
         CIBW_ARCHS: auto64
-        MACOSX_DEPLOYMENT_TARGET: 11.0
+        MACOSX_DEPLOYMENT_TARGET: 14.0
         CIBW_BUILD: "${{ matrix.os_dist.dist }}"
 
         # Linux unlike windows/macos doesn't run cibuildwheel natively but rather in a container
@@ -107,7 +107,7 @@ jobs:
         CIBW_BEFORE_ALL_LINUX: |
             dnf install -y zip
             dnf install -y unzip
-            dnf install -y curl ca-certificates libcurl openssl zlib libssh2
+            dnf install -y kernel-devel
             echo "Copying vcpkg cache into container..."
             mkdir -p /output/.vcpkg-cache
             if [ -d /host${{ github.workspace }}/.vcpkg-cache ]; then
