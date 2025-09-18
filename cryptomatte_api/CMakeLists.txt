@@ -24,7 +24,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
 		-Wall 
 		-Werror 
 		-Wextra
-		-Wno-pass-failed=transform-warning
+		-Wno-pass-failed
 	)
 	target_link_options(cryptomatte_api PUBLIC -fexperimental-library)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -74,7 +74,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
 		-Wall 
 		-Werror 
 		-Wextra
-		-Wno-pass-failed=transform-warning
+		-Wno-pass-failed
 	)
 	target_link_options(cryptomatte_api_profiling PUBLIC -fexperimental-library)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

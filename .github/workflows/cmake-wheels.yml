@@ -93,8 +93,6 @@ jobs:
         CIBW_ENVIRONMENT_LINUX: >
             VCPKG_FEATURE_FLAG="binarycaching"
             VCPKG_BINARY_SOURCES="clear;files,/output/.vcpkg-cache,readwrite"
-            CC=gcc-13
-            CXX=g++-13
         CIBW_ENVIRONMENT_MACOS: > 
             CC=clang
             CXX=clang++
