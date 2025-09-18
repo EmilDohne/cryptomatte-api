@@ -34,7 +34,7 @@ one valid option (the ones shown here).
 
 The manifest on the other hand can either be an embedded json string or a sidecar json file which is stored
 as a path relative to the image. This maps a human-readable name to its pixel hash, for more visit 
-:ref:`manifest_struct`
+:ref:`manifest_struct`. The cryptomatte-api handles reading these values for you automatically.
 
 The ``name`` attribute in this case refers to the ``{typename}`` which tells us what the channel names for
 this cryptomatte are. 
@@ -84,7 +84,17 @@ ever construct a :ref:`cryptomatte_struct` object.
 metadata 
 *********
 
-.. doxygenstruct:: cmatte::metadata
-    :members:
-    :undoc-members:
+.. tab:: c++
+
+    .. doxygenstruct:: cmatte::metadata
+        :members:
+        :undoc-members:
+
+.. tab:: python
+
+    .. autoclass:: cryptomatte_api.Metadata
+        :members:
+        :inherited-members:
+
+        .. automethod:: __init__
 

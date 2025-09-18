@@ -33,6 +33,17 @@ manifest
 *********
 
 
-.. doxygenstruct:: cmatte::manifest
+
+.. tab:: c++
+
+    .. doxygenstruct:: cmatte::manifest
+            :members:
+            :undoc-members:
+
+.. tab:: python
+
+    .. autoclass:: cryptomatte_api.Manifest
         :members:
-        :undoc-members:
+        :inherited-members:
+
+        .. automethod:: __init__

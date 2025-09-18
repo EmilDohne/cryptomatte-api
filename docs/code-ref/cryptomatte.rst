@@ -56,6 +56,10 @@ masks as they are being extracted. This is primarily to greatly reduce memory us
 quite well, but also for performance reasons (less allocations -> greater speed). For specifics please check out
 the benchmarking section in the documentation.
 
+.. note::
+
+    In-memory compression for extracted masks is currently only supported for the c++ library.
+
 
 loading a cryptomatte from disk
 *******************************
@@ -80,8 +84,8 @@ disk (which validates it) and then extract one or more masks from the image.
         import cryptomatte_api as cmatte
 
         matte = cmatte.Cryptomatte.load("from/disk/path", load_preview=False)
-        mask = matte.mask("my_mask") // will raise if 'my_mask' is not available
-        all_masks = matte.masks_compressed()
+        mask = matte.mask("my_mask") # will raise if 'my_mask' is not available
+        all_masks = matte.masks()
 
 
 .. _cryptomatte_struct:
@@ -98,4 +102,8 @@ cryptomatte
 
 .. tab:: python
 
-    foobar
+    .. autoclass:: cryptomatte_api.Cryptomatte
+        :members:
+        :inherited-members:
+
+        .. automethod:: __init__

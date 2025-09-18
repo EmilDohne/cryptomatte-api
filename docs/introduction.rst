@@ -14,7 +14,7 @@ loading that is DCC-agnostic and runs as a standalone.
 It was created out of the need for such a library as there are little open-source alternatives with the
 main one being the reference implementation and specification by `Psyop <https://github.com/Psyop/Cryptomatte>`_.
 
-This library sets the foundation, but it does not provide a standalone library that can be used by consumers
+The reference implementation library sets the foundation, but it does not provide a standalone library that can be used by consumers
 outside of nuke or fusion who are then forced to hand-roll their own implementation.
 
 The ``cryptomatte-api`` is continuously tested for accuracy and error-handling capabilities to ensure
@@ -22,7 +22,7 @@ that it can be used with confidence in production. It optionally uses in-memory 
 fast compression algorithm to limit memory usage making it very efficient to extract a large
 number of masks using a trivial amount of memory. For more details visit the :ref:`cmatte_benchmarks` page.
 
-Challenges
+challenges
 ===========
 
 A cryptomatte library typically has a couple of challenges to overcome. The ``cryptomatte-api``
@@ -47,7 +47,7 @@ and manifest. This is something that needs to be handled well to avoid issues du
 
 
 
-Acknowledgments
+acknowledgments
 =================
 
 ``cryptomatte-api`` depends upon several other open source packages, detailed below. 
