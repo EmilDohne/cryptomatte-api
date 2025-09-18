@@ -5,10 +5,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-     - dev
+     - main
   pull_request:
     branches:
-     - master
+     - main
   release:
     types:
       - published
